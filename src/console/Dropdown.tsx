@@ -12,7 +12,7 @@ export function Dropdown<T extends string>({
 }: {
   value: T;
   options: readonly T[];
-  onChange: (v: T) => void;
+  onChange: (v: NoInfer<T>) => void;
   /** Shown before the value, e.g. "Sort: ". */
   prefix?: string;
   className?: string;

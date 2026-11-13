@@ -1,6 +1,10 @@
-import { ChevronDown } from "lucide-react";
+import { useState } from "react";
 import { Btn, IconTile, PageTitle, Panel, PanelHeader, Pill, Td, Th } from "@/console/ui";
+import { Dropdown } from "@/console/Dropdown";
 import { cn } from "@/lib/utils";
+
+const RANGES = ["Last 7 days", "Last 30 days", "Today"] as const;
+const DESKS = ["Club Mahindra desk", "All desks"] as const;
 
 const VERSIONS = ["v6.8", "v7.0", "v7.1", "v7.2", "v7.3 live"];
 const RUBRIC: { name: string; scores: number[] }[] = [
@@ -25,6 +29,9 @@ const FLAGGED = [
 const scoreTone = (s: number) => (s >= 95 ? "bg-emerald-50 text-emerald-700" : s >= 90 ? "bg-emerald-50/60 text-emerald-700" : s >= 85 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700");
 
 export default function QAScorecards() {
+  // shortcut: range and desk only relabel the page; the rubric numbers are a single demo snapshot until scores come from the API
+  const [range, setRange] = useState<(typeof RANGES)[number]>(RANGES[0]);
+  const [desk, setDesk] = useState<(typeof DESKS)[number]>(DESKS[0]);
   return (
     <>
       <PageTitle
@@ -32,8 +39,8 @@ export default function QAScorecards() {
         title="QA scorecards"
         actions={
           <>
-            <Btn>Last 7 days <ChevronDown className="h-3.5 w-3.5" /></Btn>
-            <Btn>Club Mahindra desk <ChevronDown className="h-3.5 w-3.5" /></Btn>
+            <Dropdown value={range} options={RANGES} onChange={setRange} />
+            <Dropdown value={desk} options={DESKS} onChange={setDesk} />
             <Btn>Edit rubric</Btn>
             <Btn variant="dark">Export report</Btn>
           </>
@@ -49,7 +56,7 @@ export default function QAScorecards() {
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.2fr]">
         <Panel>
-          <PanelHeader title="Rubric by prompt version" hint="Mean score, Meera v7" />
+          <PanelHeader title="Rubric by prompt version" hint={`Mean score, Meera v7, ${range.toLowerCase()}, ${desk}`} />
           <table className="w-full">
             <thead className="bg-zinc-50">
               <tr>

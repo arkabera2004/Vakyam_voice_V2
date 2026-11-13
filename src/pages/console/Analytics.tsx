@@ -1,7 +1,15 @@
+import { useState } from "react";
 import { Btn, PageTitle, Panel, PanelHeader, Td, Th } from "@/console/ui";
+import { Dropdown } from "@/console/Dropdown";
 
 const DAYS = ["Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"];
-const VOLUME = [1180, 1310, 1420, 1390, 1240, 1200, 1202]; // split 46/31/23 Hindi/English/Mixed
+const VOLUME = [1180, 1310, 1420, 1390, 1240, 1200, 1202];
+const RANGES = ["Last 7 days, 6 to 12 Nov", "Last 30 days", "This month"] as const;
+const LINES = ["Club Mahindra line", "All lines"] as const;
+const LANGS = ["All languages", "Hindi", "English", "Mixed"] as const;
+type LangFilter = (typeof LANGS)[number];
+// language share of every day's volume; the stacked bars and the donut both use it
+const SHARE: Record<Exclude<LangFilter, "All languages">, number> = { Hindi: 0.46, English: 0.31, Mixed: 0.23 };
 const TREND = [68.1, 69.0, 69.6, 70.2, 70.6, 71.0, 71.4];
 
 const COST = [
@@ -14,7 +22,12 @@ const COST = [
 const C = { hi: "#18181b", en: "#E2703A", mixed: "#F3C3A6" };
 
 export default function Analytics() {
-  const max = Math.max(...VOLUME);
+  const [range, setRange] = useState<(typeof RANGES)[number]>(RANGES[0]);
+  const [line, setLine] = useState<(typeof LINES)[number]>(LINES[0]);
+  const [lang, setLang] = useState<LangFilter>(LANGS[0]);
+  const volume = lang === "All languages" ? VOLUME : VOLUME.map((v) => Math.round(v * SHARE[lang]));
+  const segments = (Object.keys(SHARE) as (keyof typeof SHARE)[]).filter((k) => lang === "All languages" || k === lang);
+  const max = Math.max(...volume);
   const points = TREND.map((v, i) => `${(i / (TREND.length - 1)) * 100},${100 - ((v - 67) / 5) * 100}`).join(" ");
   // donut: 46 / 31 / 23
   const r = 36, circ = 2 * Math.PI * r;
@@ -24,7 +37,9 @@ export default function Analytics() {
       <PageTitle crumb="Govern, Club Mahindra member line, Meera v7" title="Analytics" actions={<><Btn>Export CSV</Btn><Btn variant="dark">Schedule weekly report</Btn></>} />
 
       <div className="mb-4 flex flex-wrap items-center gap-2 text-[13px]">
-        <Btn size="sm">Last 7 days, 6 to 12 Nov</Btn><Btn size="sm">Club Mahindra line</Btn><Btn size="sm">All languages</Btn>
+        <Dropdown value={range} options={RANGES} onChange={setRange} />
+        <Dropdown value={line} options={LINES} onChange={setLine} />
+        <Dropdown value={lang} options={LANGS} onChange={setLang} />
         <span className="text-zinc-500">Compared with the previous 7 days</span>
       </div>
 
@@ -43,11 +58,13 @@ export default function Analytics() {
             <span className="flex gap-3 text-[11px] text-zinc-600"><Leg c={C.hi} t="Hindi" /><Leg c={C.en} t="English" /><Leg c={C.mixed} t="Mixed" /></span>
           </div>
           <div className="mt-4 flex h-40 items-end gap-3">
-            {VOLUME.map((v, i) => (
+            {volume.map((v, i) => (
               <div key={i} className="flex flex-1 flex-col items-center justify-end gap-1">
                 <span className="text-[10px] text-zinc-500">{v.toLocaleString("en-IN")}</span>
                 <div className="flex w-full flex-col-reverse overflow-hidden rounded-sm" style={{ height: (v / max) * 130 }}>
-                  <div style={{ height: "46%", background: C.hi }} /><div style={{ height: "31%", background: C.en }} /><div style={{ height: "23%", background: C.mixed }} />
+                  {segments.map((k) => (
+                    <div key={k} style={{ height: lang === "All languages" ? `${SHARE[k] * 100}%` : "100%", background: { Hindi: C.hi, English: C.en, Mixed: C.mixed }[k] }} />
+                  ))}
                 </div>
               </div>
             ))}

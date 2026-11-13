@@ -1,5 +1,7 @@
 import { Bell, Search, LogOut, Mic, Phone, ClipboardList, BarChart3 } from "lucide-react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { searchConsole } from "./search";
 import { useAuth } from "@/contexts/AuthContext";
 import { WayamMark } from "@/components/brand/WayamMark";
 import { cn } from "@/lib/utils";
@@ -20,6 +22,70 @@ const CRUMBS: Record<string, string> = {
   "/console/analytics": "Analytics",
   "/console/alerts": "Alerts / Pune desk",
 };
+
+function SearchBox() {
+  const [q, setQ] = useState("");
+  const [active, setActive] = useState(0);
+  const navigate = useNavigate();
+  const hits = searchConsole(q);
+  const go = (i: number) => {
+    const hit = hits[i];
+    if (!hit) return;
+    navigate(hit.to);
+    setQ("");
+  };
+  return (
+    <div className="relative mx-3 mt-4">
+      <label className="flex h-9 items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 text-[13px] text-zinc-500 focus-within:border-zinc-400">
+        <Search className="h-3.5 w-3.5" />
+        <input
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setActive(0);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown") setActive((a) => Math.min(a + 1, hits.length - 1));
+            else if (e.key === "ArrowUp") setActive((a) => Math.max(a - 1, 0));
+            else if (e.key === "Enter") go(active);
+            else if (e.key === "Escape") setQ("");
+            else return;
+            e.preventDefault();
+          }}
+          role="combobox"
+          aria-expanded={hits.length > 0}
+          aria-controls="console-search-results"
+          className="w-full bg-transparent outline-none placeholder:text-zinc-400"
+          placeholder="Search calls, callers, tools"
+        />
+      </label>
+      {q.trim() && (
+        <ul id="console-search-results" role="listbox" className="absolute left-0 right-0 z-20 mt-1 rounded-lg border border-zinc-200 bg-white p-1 shadow-lg">
+          {hits.length === 0 && <li className="px-2.5 py-2 text-xs text-zinc-500">No calls, callers or tools match "{q}".</li>}
+          {hits.map((h, i) => (
+            <li key={h.kind + h.to + h.title}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={i === active}
+                onMouseEnter={() => setActive(i)}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => go(i)}
+                className={cn("flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left", i === active && "bg-zinc-100")}
+              >
+                <span className="w-11 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-zinc-400">{h.kind}</span>
+                <span className="min-w-0">
+                  <span className="block truncate text-[13px] font-medium text-zinc-900">{h.title}</span>
+                  <span className="block truncate text-[11px] text-zinc-500">{h.sub}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 const MOBILE_TABS = [
   { to: "/console/alerts", label: "Alerts", icon: Bell },
@@ -42,10 +108,7 @@ export function ConsoleShell() {
           <span className="text-xs text-zinc-500">Voice</span>
         </Link>
 
-        <label className="mx-3 mt-4 flex h-9 items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 text-[13px] text-zinc-500">
-          <Search className="h-3.5 w-3.5" />
-          <input className="w-full bg-transparent outline-none placeholder:text-zinc-400" placeholder="Search calls, callers, tools" />
-        </label>
+        <SearchBox />
 
         <nav className="mt-3 flex-1 overflow-y-auto px-3">
           {NAV.map((g, gi) => (

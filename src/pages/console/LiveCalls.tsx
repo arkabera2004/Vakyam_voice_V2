@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
-import { Avatar, Btn, IconTile, PageTitle, Panel, SegmentBar } from "@/console/ui";
+import { Avatar, IconTile, PageTitle, Panel, SegmentBar } from "@/console/ui";
+import { Dropdown } from "@/console/Dropdown";
 import { LIVE_CALLS, type Sentiment } from "@/console/data/calls";
+import { SORTS, sortCalls, type Sort } from "@/console/data/sortCalls";
 import { cn } from "@/lib/utils";
+
+const LINES = ["Club Mahindra member line", "All lines"] as const;
 
 const sentimentClass: Record<Sentiment, string> = {
   Positive: "text-emerald-600",
@@ -11,6 +15,9 @@ const sentimentClass: Record<Sentiment, string> = {
 };
 
 export default function LiveCalls() {
+  const [line, setLine] = useState<(typeof LINES)[number]>(LINES[0]);
+  const [sort, setSort] = useState<Sort>(SORTS[0]);
+  const calls = sortCalls(LIVE_CALLS, sort); // shortcut: only one line has calls today, so the line filter changes nothing until more desks exist
   const frustrated = LIVE_CALLS.filter((c) => c.sentiment === "Frustrated").length;
   return (
     <>
@@ -19,8 +26,8 @@ export default function LiveCalls() {
         title="Live calls"
         actions={
           <>
-            <Btn>Club Mahindra member line <ChevronDown className="h-3.5 w-3.5" /></Btn>
-            <Btn>Sort: needs attention first <ChevronDown className="h-3.5 w-3.5" /></Btn>
+            <Dropdown value={line} options={LINES} onChange={setLine} />
+            <Dropdown value={sort} options={SORTS} onChange={setSort} prefix="Sort: " />
           </>
         }
       />
@@ -40,13 +47,13 @@ export default function LiveCalls() {
       </Panel>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {LIVE_CALLS.map((c, i) => (
+        {calls.map((c) => (
           <Link
             key={c.id}
             to={`/console/live/${c.id}`}
             className={cn(
               "rounded-xl border bg-white p-4 transition-colors hover:border-zinc-300",
-              i === 0 ? "border-[#E2703A] bg-[#FDF6F1]" : "border-zinc-200",
+              c.sentiment === "Frustrated" && c.stepHot ? "border-[#E2703A] bg-[#FDF6F1]" : "border-zinc-200",
             )}
           >
             <div className="flex items-center gap-3">
@@ -68,7 +75,7 @@ export default function LiveCalls() {
           </Link>
         ))}
       </div>
-      <p className="mt-4 text-xs text-zinc-500">Showing {LIVE_CALLS.length} of 14 live calls. 2 more are connecting.</p>
+      <p className="mt-4 text-xs text-zinc-500">Showing {calls.length} of 14 live calls. 2 more are connecting.</p>
     </>
   );
 }
