@@ -11,6 +11,8 @@ import NotFound from "./pages/NotFound";
 const Home = lazy(() => import("./pages/console/Home"));
 const LiveCalls = lazy(() => import("./pages/console/LiveCalls"));
 const LiveCallDetail = lazy(() => import("./pages/console/LiveCallDetail"));
+const WarmTransfer = lazy(() => import("./pages/console/WarmTransfer"));
+const CallReview = lazy(() => import("./pages/console/CallReview"));
 
 const Loading = () => <div className="p-8 text-sm text-zinc-500">Loading…</div>;
 
@@ -28,6 +30,8 @@ const App = () => (
               <Route index element={<Home />} />
               <Route path="live" element={<LiveCalls />} />
               <Route path="live/:id" element={<LiveCallDetail />} />
+              <Route path="transfers" element={<WarmTransfer />} />
+              <Route path="review" element={<CallReview />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
