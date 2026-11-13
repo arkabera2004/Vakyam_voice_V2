@@ -75,14 +75,14 @@ export default function Tools() {
 
         <div className="space-y-4">
           <Panel>
-            <PanelHeader title="Six tool verbs" hint="Last 24 hours, all adapters combined" className="flex-col items-start gap-0" />
+            <PanelHeader title="Six tool verbs" hint="Last 24 hours, all adapters combined" stack />
             <table className="w-full">
               <thead><tr><Th>Verb</Th><Th className="text-right">p95</Th><Th className="text-right">Success</Th></tr></thead>
               <tbody>
                 {VERBS.map((x) => (
                   <tr key={x.v} className="border-t border-zinc-100">
                     <Td className="font-medium">{x.v}</Td>
-                    <Td className={cn("text-right", x.slow && "text-amber-600")}>{x.p95}</Td>
+                    <Td className={cn("whitespace-nowrap text-right", x.slow && "text-amber-600")}>{x.p95}</Td>
                     <Td className={cn("text-right font-medium", x.slow ? "text-amber-600" : "text-emerald-600")}>{x.ok}</Td>
                   </tr>
                 ))}

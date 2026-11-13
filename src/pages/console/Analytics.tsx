@@ -44,9 +44,9 @@ export default function Analytics() {
           </div>
           <div className="mt-4 flex h-40 items-end gap-3">
             {VOLUME.map((v, i) => (
-              <div key={i} className="flex flex-1 flex-col items-center gap-1">
+              <div key={i} className="flex flex-1 flex-col items-center justify-end gap-1">
                 <span className="text-[10px] text-zinc-500">{v.toLocaleString("en-IN")}</span>
-                <div className="flex w-full flex-col-reverse overflow-hidden rounded-sm" style={{ height: `${(v / max) * 100}%` }}>
+                <div className="flex w-full flex-col-reverse overflow-hidden rounded-sm" style={{ height: (v / max) * 130 }}>
                   <div style={{ height: "46%", background: C.hi }} /><div style={{ height: "31%", background: C.en }} /><div style={{ height: "23%", background: C.mixed }} />
                 </div>
               </div>

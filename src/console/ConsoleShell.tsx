@@ -29,7 +29,7 @@ const MOBILE_TABS = [
 ];
 
 export function ConsoleShell() {
-  const { pathname } = useLocation();
+  const pathname = useLocation().pathname.replace(/\/+$/, "") || "/";
   const { signOut } = useAuth();
   const crumb = CRUMBS[pathname] ?? (pathname.startsWith("/console/live/") ? "Live calls / Call 4821, Priya Sharma" : "Console");
 

@@ -22,7 +22,7 @@ const FLAGGED = [
   { call: 4768, member: "Priya Sharma", tier: "Gold", criterion: "Correct tool use", score: 71, reviewer: "Kavita Rao" },
 ];
 
-export const scoreTone = (s: number) => (s >= 95 ? "bg-emerald-50 text-emerald-700" : s >= 90 ? "bg-emerald-50/60 text-emerald-700" : s >= 85 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700");
+const scoreTone = (s: number) => (s >= 95 ? "bg-emerald-50 text-emerald-700" : s >= 90 ? "bg-emerald-50/60 text-emerald-700" : s >= 85 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700");
 
 export default function QAScorecards() {
   return (

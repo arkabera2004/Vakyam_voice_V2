@@ -22,7 +22,7 @@ export default function Routing() {
 
       <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
         <Panel>
-          <PanelHeader title="Inbound rules" hint="Checked top to bottom, the first match wins" className="flex-col items-start gap-0" />
+          <PanelHeader title="Inbound rules" hint="Checked top to bottom, the first match wins" stack />
           <ol className="divide-y divide-zinc-100">
             {RULES.map((r, i) => (
               <li key={r.title} className="flex gap-3 p-4">

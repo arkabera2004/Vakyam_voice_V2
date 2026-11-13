@@ -14,15 +14,18 @@ export function PanelHeader({
   hint,
   right,
   className,
+  stack,
 }: {
   title: ReactNode;
   hint?: ReactNode;
   right?: ReactNode;
   className?: string;
+  /** Put the hint under the title, for narrow panels. */
+  stack?: boolean;
 }) {
   return (
     <header className={cn("flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3", className)}>
-      <div className="flex items-baseline gap-2">
+      <div className={cn("flex gap-2", stack ? "flex-col gap-0.5" : "items-baseline")}>
         <h3 className="text-[15px] font-semibold text-zinc-900">{title}</h3>
         {hint && <span className="text-xs text-zinc-500">{hint}</span>}
       </div>
