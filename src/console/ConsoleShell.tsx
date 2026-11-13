@@ -1,4 +1,6 @@
-import { Bell, Search, LogOut, Mic, Phone, ClipboardList, BarChart3 } from "lucide-react";
+import { Bell, Search, LogOut, Mic, Phone, ClipboardList, BarChart3, RotateCcw } from "lucide-react";
+import { useConsole } from "./store";
+import { LIVE_CALLS } from "./data/calls";
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { searchConsole } from "./search";
@@ -97,7 +99,18 @@ const MOBILE_TABS = [
 export function ConsoleShell() {
   const pathname = useLocation().pathname.replace(/\/+$/, "") || "/";
   const { signOut } = useAuth();
-  const crumb = CRUMBS[pathname] ?? (pathname.startsWith("/console/live/") ? "Live calls / Call 4821, Priya Sharma" : "Console");
+  const { state, reset } = useConsole();
+  const liveId = Number(pathname.split("/console/live/")[1]);
+  const liveCall = LIVE_CALLS.find((c) => c.id === liveId);
+  const crumb = CRUMBS[pathname] ?? (liveCall ? `Live calls / Call ${liveCall.id}, ${liveCall.name}` : "Console");
+  // Badges follow what the supervisor has already handled.
+  const transfersOpen = state.transfer.state === "ringing" ? 3 : 2;
+  const homeOpen = 3 + ["refund-5521", "upgrade-anita", "holds"].filter((id) => !state.decided[id]).length + (state.transfer.state === "ringing" ? 1 : 0);
+  const badge = (to: string, fallback?: string) => (to === "/console" ? String(homeOpen) : to === "/console/transfers" ? String(transfersOpen) : to === "/console/studio" ? state.liveVersion : fallback);
+  const resetDemo = () => {
+    if (!window.confirm("Reset the demo? Every decision, toggle and audit entry you made in this browser goes back to the starting state.")) return;
+    reset();
+  };
 
   return (
     <div className="flex min-h-screen bg-zinc-50 text-zinc-900 antialiased">
@@ -137,7 +150,7 @@ export function ConsoleShell() {
                         it.badgeTone === "muted" && "text-zinc-400",
                       )}
                     >
-                      {it.badge}
+                      {badge(it.to, it.badge)}
                     </span>
                   )}
                 </NavLink>
@@ -163,6 +176,9 @@ export function ConsoleShell() {
             <p className="truncate text-[13px] font-medium">Kavita Rao</p>
             <p className="truncate text-[11px] text-zinc-500">Floor supervisor · Pune</p>
           </div>
+          <button onClick={resetDemo} title="Reset demo data" aria-label="Reset demo data" className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700">
+            <RotateCcw className="h-4 w-4" />
+          </button>
           <button onClick={signOut} title="Log out" className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700">
             <LogOut className="h-4 w-4" />
           </button>
