@@ -1,6 +1,8 @@
 import { Pause, Play } from "lucide-react";
 import { Avatar, Btn, Dot, Langs, Panel, PanelHeader, Pill } from "@/console/ui";
 import { useSpeaker } from "@/console/speak";
+import { useConsole } from "@/console/store";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 const CALL_SECONDS = 6 * 60 + 44;
@@ -32,6 +34,26 @@ const WAVE = Array.from({ length: 110 }, (_, i) => 6 + Math.abs(Math.sin(i * 0.7
 
 export default function CallReview() {
   const speaker = useSpeaker();
+  const { state, update, log } = useConsole();
+  const flagged = state.coaching.includes(4790);
+  const share = async () => {
+    const url = `${location.origin}/console/review`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Link copied", description: "Anyone on the Pune desk with console access can open call 4790." });
+    } catch {
+      toast({ title: "Share this link", description: url });
+    }
+  };
+  const flag = () => {
+    update((s) => ({ coaching: flagged ? s.coaching.filter((n) => n !== 4790) : [...s.coaching, 4790] }));
+    log(flagged ? "Removed coaching flag on call 4790" : "Flagged call 4790 for coaching, language match 70", "QA");
+    toast({ title: flagged ? "Flag removed" : "Flagged for coaching", description: flagged ? "Call 4790 is back to auto scored only." : "Asha Nair gets it in tomorrow's coaching queue with the language match turn marked." });
+  };
+  const closeCallback = () => {
+    update({ callbackDone: !state.callbackDone });
+    toast({ title: state.callbackDone ? "Callback reopened" : "Callback closed", description: state.callbackDone ? "Back on Asha's list for tomorrow 11:00." : "Payment link sent, hold confirmed." });
+  };
   const playing = speaker.playingId === "recording";
   // Playhead follows the turn being spoken; parked at 03:36 like the design when idle.
   const current = playing && speaker.lineIndex >= 0 ? TRANSCRIPT[speaker.lineIndex] : null;
@@ -52,8 +74,8 @@ export default function CallReview() {
         <div className="flex items-center gap-2">
           <Pill tone="green">Resolved by Meera</Pill>
           <Pill>HI 38, EN 62</Pill>
-          <Btn size="sm">Share</Btn>
-          <Btn size="sm">Flag for coaching</Btn>
+          <Btn size="sm" onClick={share}>Share</Btn>
+          <Btn size="sm" variant={flagged ? "dark" : "outline"} onClick={flag} aria-pressed={flagged}>{flagged ? "Flagged for coaching" : "Flag for coaching"}</Btn>
         </div>
       </div>
 
@@ -122,7 +144,7 @@ export default function CallReview() {
                 <p className="text-sm font-medium">Send payment link and confirm hold</p>
                 <p className="text-xs text-zinc-500">Tomorrow 11:00, assigned to Asha Nair</p>
               </div>
-              <span className="text-xs font-medium text-[#E2703A]">Open</span>
+              <button onClick={closeCallback} className={cn("text-xs font-medium", state.callbackDone ? "text-emerald-600" : "text-[#E2703A]")}>{state.callbackDone ? "Done" : "Open"}</button>
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5">
               <Pill>log_call written</Pill>

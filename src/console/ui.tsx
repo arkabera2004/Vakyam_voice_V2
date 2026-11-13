@@ -232,6 +232,6 @@ export function Th({ children, className }: { children?: ReactNode; className?: 
   return <th className={cn("px-4 py-2 text-left text-xs font-medium text-zinc-500", className)}>{children}</th>;
 }
 
-export function Td({ children, className }: { children?: ReactNode; className?: string }) {
-  return <td className={cn("px-4 py-3 align-middle text-sm text-zinc-800", className)}>{children}</td>;
+export function Td({ children, className, ...rest }: { children?: ReactNode; className?: string } & React.TdHTMLAttributes<HTMLTableCellElement>) {
+  return <td className={cn("px-4 py-3 align-middle text-sm text-zinc-800", className)} {...rest}>{children}</td>;
 }
