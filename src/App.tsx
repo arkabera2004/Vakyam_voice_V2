@@ -9,6 +9,8 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
 const Home = lazy(() => import("./pages/console/Home"));
+const LiveCalls = lazy(() => import("./pages/console/LiveCalls"));
+const LiveCallDetail = lazy(() => import("./pages/console/LiveCallDetail"));
 
 const Loading = () => <div className="p-8 text-sm text-zinc-500">Loading…</div>;
 
@@ -24,6 +26,8 @@ const App = () => (
             <Route path="/voice" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/console" element={<ProtectedRoute><ConsoleShell /></ProtectedRoute>}>
               <Route index element={<Home />} />
+              <Route path="live" element={<LiveCalls />} />
+              <Route path="live/:id" element={<LiveCallDetail />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
