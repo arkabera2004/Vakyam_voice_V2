@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Btn, PageTitle, Panel, PanelHeader, Td, Th } from "@/console/ui";
 import { Dropdown } from "@/console/Dropdown";
+import { useConsole } from "@/console/store";
+import { Modal, Field, inputClass, ModalActions } from "@/console/Modal";
+import { downloadCsv } from "@/console/export";
+import { toast } from "@/hooks/use-toast";
 
 const DAYS = ["Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"];
 const VOLUME = [1180, 1310, 1420, 1390, 1240, 1200, 1202];
@@ -31,10 +35,39 @@ export default function Analytics() {
   const points = TREND.map((v, i) => `${(i / (TREND.length - 1)) * 100},${100 - ((v - 67) / 5) * 100}`).join(" ");
   // donut: 46 / 31 / 23
   const r = 36, circ = 2 * Math.PI * r;
+  const { state, update, log } = useConsole();
+  const [scheduling, setScheduling] = useState(false);
+  const [sched, setSched] = useState({ day: "Monday", time: "08:00", to: "kavita.rao@clubmahindra.example" });
+
+  const exportCsv = () => {
+    downloadCsv(`analytics-${lang.toLowerCase().replace(/\s+/g, "-")}.csv`, [
+      ["Day", "Calls", "Hindi", "English", "Mixed", "Containment %"],
+      ...DAYS.map((d, i) => [d, VOLUME[i], Math.round(VOLUME[i] * SHARE.Hindi), Math.round(VOLUME[i] * SHARE.English), Math.round(VOLUME[i] * SHARE.Mixed), TREND[i]]),
+      [], ["Model", "Minutes", "Rupees per min", "Total"], ...COST.map((c) => [c.model, 46200, c.rpm, c.total]),
+    ]);
+    toast({ title: "Analytics exported", description: `${range}, ${line}, ${lang}.` });
+  };
+  const schedule = () => {
+    const when = `${sched.day}s at ${sched.time} IST to ${sched.to}`;
+    update({ weeklyReport: when });
+    log(`Weekly analytics report scheduled, ${when}`, "Report");
+    setScheduling(false);
+    toast({ title: "Weekly report scheduled", description: when });
+  };
 
   return (
     <>
-      <PageTitle crumb="Govern, Club Mahindra member line, Meera v7" title="Analytics" actions={<><Btn>Export CSV</Btn><Btn variant="dark">Schedule weekly report</Btn></>} />
+      <PageTitle crumb="Govern, Club Mahindra member line, Meera v7" title="Analytics" actions={<><Btn onClick={exportCsv}>Export CSV</Btn><Btn variant="dark" onClick={() => setScheduling(true)}>{state.weeklyReport ? "Weekly report: on" : "Schedule weekly report"}</Btn></>} />
+      {scheduling && (
+        <Modal title="Schedule the weekly report" hint="A PDF of this page for the chosen filters, plus the CSV." onClose={() => setScheduling(false)} footer={<><Btn size="sm" onClick={() => setScheduling(false)}>Cancel</Btn>{state.weeklyReport && <Btn size="sm" onClick={() => { update({ weeklyReport: undefined }); log("Weekly analytics report cancelled", "Report"); setScheduling(false); }}>Stop sending</Btn>}<Btn size="sm" variant="primary" onClick={schedule} disabled={!sched.to.includes("@")}>Schedule</Btn></>}>
+          {state.weeklyReport && <p className="text-xs text-emerald-700">Currently: {state.weeklyReport}</p>}
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Day"><select value={sched.day} onChange={(e) => setSched({ ...sched, day: e.target.value })} className={inputClass}>{["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((d) => <option key={d}>{d}</option>)}</select></Field>
+            <Field label="Time, IST"><input type="time" value={sched.time} onChange={(e) => setSched({ ...sched, time: e.target.value })} className={inputClass} /></Field>
+          </div>
+          <Field label="Send to"><input type="email" value={sched.to} onChange={(e) => setSched({ ...sched, to: e.target.value })} className={inputClass} /></Field>
+        </Modal>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center gap-2 text-[13px]">
         <Dropdown value={range} options={RANGES} onChange={setRange} />
