@@ -1,4 +1,4 @@
-import { Bell, Search, LogOut, Mic } from "lucide-react";
+import { Bell, Search, LogOut, Mic, Phone, ClipboardList, BarChart3 } from "lucide-react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { WayamMark } from "@/components/brand/WayamMark";
@@ -18,7 +18,15 @@ const CRUMBS: Record<string, string> = {
   "/console/knowledge": "Knowledge and policies",
   "/console/compliance": "Compliance and consent",
   "/console/analytics": "Analytics",
+  "/console/alerts": "Alerts / Pune desk",
 };
+
+const MOBILE_TABS = [
+  { to: "/console/alerts", label: "Alerts", icon: Bell },
+  { to: "/console/live", label: "Live", icon: Phone },
+  { to: "/console/review", label: "Review", icon: ClipboardList },
+  { to: "/console", label: "Today", icon: BarChart3 },
+];
 
 export function ConsoleShell() {
   const { pathname } = useLocation();
@@ -116,11 +124,19 @@ export function ConsoleShell() {
             </Link>
           </div>
         </header>
-        <main className="flex-1 px-5 py-6 md:px-8">
+        <main className="flex-1 px-4 py-6 pb-24 md:px-8 md:pb-6">
           <div className="mx-auto max-w-[1180px]">
             <Outlet />
           </div>
         </main>
+        <nav className="fixed inset-x-0 bottom-0 grid grid-cols-4 border-t border-zinc-200 bg-white py-2 md:hidden">
+          {MOBILE_TABS.map((t) => (
+            <NavLink key={t.to} to={t.to} end className={({ isActive }) => cn("flex flex-col items-center gap-0.5 text-[11px]", isActive ? "text-[#E2703A]" : "text-zinc-500")}>
+              <t.icon className="h-5 w-5" />
+              {t.label}
+            </NavLink>
+          ))}
+        </nav>
       </div>
     </div>
   );

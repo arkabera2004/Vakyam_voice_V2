@@ -20,6 +20,7 @@ const Routing = lazy(() => import("./pages/console/Routing"));
 const Knowledge = lazy(() => import("./pages/console/Knowledge"));
 const Compliance = lazy(() => import("./pages/console/Compliance"));
 const Analytics = lazy(() => import("./pages/console/Analytics"));
+const MobileSupervisor = lazy(() => import("./pages/console/MobileSupervisor"));
 
 const Loading = () => <div className="p-8 text-sm text-zinc-500">Loading…</div>;
 
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="knowledge" element={<Knowledge />} />
               <Route path="compliance" element={<Compliance />} />
               <Route path="analytics" element={<Analytics />} />
+              <Route path="alerts" element={<MobileSupervisor />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
