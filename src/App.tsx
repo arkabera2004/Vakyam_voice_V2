@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ConsoleShell } from "@/console/ConsoleShell";
+import { ConsoleProvider } from "@/console/store";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -34,7 +35,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<Navigate to="/console" replace />} />
             <Route path="/voice" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/console" element={<ProtectedRoute><ConsoleShell /></ProtectedRoute>}>
+            <Route path="/console" element={<ProtectedRoute><ConsoleProvider><ConsoleShell /></ConsoleProvider></ProtectedRoute>}>
               <Route index element={<Home />} />
               <Route path="live" element={<LiveCalls />} />
               <Route path="live/:id" element={<LiveCallDetail />} />

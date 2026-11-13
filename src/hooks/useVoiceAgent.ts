@@ -29,7 +29,7 @@ interface Call {
  * Asks for a voice session. VITE_REALTIME_TOKEN_URL points at a locally served
  * copy of the realtime-token function, for trying changes before deploying it.
  */
-const requestSession = async () => {
+export const requestSession = async () => {
   const localUrl = import.meta.env.VITE_REALTIME_TOKEN_URL as string | undefined;
   if (!localUrl) return supabase.functions.invoke("realtime-token");
   const { data: auth } = await supabase.auth.getSession();
