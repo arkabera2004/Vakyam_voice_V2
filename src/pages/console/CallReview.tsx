@@ -1,6 +1,10 @@
-import { Play } from "lucide-react";
+import { Pause, Play } from "lucide-react";
 import { Avatar, Btn, Dot, Langs, Panel, PanelHeader, Pill } from "@/console/ui";
+import { useSpeaker } from "@/console/speak";
 import { cn } from "@/lib/utils";
+
+const CALL_SECONDS = 6 * 60 + 44;
+const toSeconds = (mmss: string) => mmss.split(":").reduce((m, s) => m * 60 + Number(s), 0);
 
 type Turn = { t: string; who: string; text: string; langs: ("HI" | "EN")[]; tool?: { name: string; detail: string } };
 
@@ -27,6 +31,14 @@ const RUBRIC = [
 const WAVE = Array.from({ length: 110 }, (_, i) => 6 + Math.abs(Math.sin(i * 0.7) * 14 + Math.cos(i * 1.9) * 8));
 
 export default function CallReview() {
+  const speaker = useSpeaker();
+  const playing = speaker.playingId === "recording";
+  // Playhead follows the turn being spoken; parked at 03:36 like the design when idle.
+  const current = playing && speaker.lineIndex >= 0 ? TRANSCRIPT[speaker.lineIndex] : null;
+  const headSeconds = current ? toSeconds(current.t) : 3 * 60 + 36;
+  const headLabel = `${String(Math.floor(headSeconds / 60)).padStart(2, "0")}:${String(headSeconds % 60).padStart(2, "0")}`;
+  // shortcut: no audio file exists for demo calls, so "play" reads the transcript aloud; swap for an <audio> src when recordings are stored.
+  const toggle = () => speaker.play("recording", TRANSCRIPT.map((t) => ({ text: t.text, lang: t.langs[0] ?? "EN" })));
   return (
     <>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -49,9 +61,11 @@ export default function CallReview() {
         <div className="space-y-4">
           <Panel className="p-4">
             <div className="flex items-center gap-3">
-              <button className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-white" aria-label="Play"><Play className="h-3.5 w-3.5 fill-current" /></button>
+              <button onClick={toggle} disabled={!speaker.supported} className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-white disabled:opacity-50" aria-label={playing ? "Pause" : "Play"}>
+                {playing ? <Pause className="h-3.5 w-3.5 fill-current" /> : <Play className="h-3.5 w-3.5 fill-current" />}
+              </button>
               <span className="text-sm font-semibold">Recording</span>
-              <span className="text-xs text-zinc-500">03:36 / 06:44, 1x</span>
+              <span className="text-xs tabular-nums text-zinc-500">{headLabel} / 06:44, 1x</span>
               <span className="ml-auto flex items-center gap-3 text-xs text-zinc-600">
                 <span className="flex items-center gap-1"><Dot tone="grey" /><span className="-ml-2 h-2 w-2 rounded-full bg-zinc-900" /> Meera</span>
                 <span className="flex items-center gap-1"><Dot tone="orange" /> Anita</span>
@@ -61,7 +75,7 @@ export default function CallReview() {
               {WAVE.map((h, i) => (
                 <span key={i} className="flex-1 rounded-sm" style={{ height: h * 2, background: i % 3 === 1 ? "#E2703A" : "#18181b" }} />
               ))}
-              <span className="absolute left-[53%] top-0 h-full w-px bg-[#E2703A]" />
+              <span className="absolute top-0 h-full w-px bg-[#E2703A] transition-[left] duration-500" style={{ left: `${(headSeconds / CALL_SECONDS) * 100}%` }} />
             </div>
             <div className="mt-2 flex justify-between text-[11px] text-zinc-500"><span>00:00</span><span>01:30</span><span>03:00</span><span>04:30</span><span>06:44</span></div>
           </Panel>
@@ -70,7 +84,7 @@ export default function CallReview() {
             <PanelHeader title="Transcript" hint="Language tagged per sentence, tool calls inline" right={<Langs codes={["HI", "EN"]} />} />
             <ol className="px-4 py-2">
               {TRANSCRIPT.map((turn) => (
-                <li key={turn.t} className="py-2.5">
+                <li key={turn.t} className={cn("py-2.5", current === turn && "-mx-2 rounded-lg bg-[#FDF6F1] px-2")}>
                   <div className="grid grid-cols-[48px_1fr] gap-3">
                     <span className="text-xs tabular-nums text-zinc-400">{turn.t}</span>
                     <div>

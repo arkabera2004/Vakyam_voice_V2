@@ -1,5 +1,6 @@
-import { Play } from "lucide-react";
+import { Play, Square } from "lucide-react";
 import { Btn, IconTile, Lang, PageTitle, Panel, PanelHeader, Pill, Td, Th } from "@/console/ui";
+import { useSpeaker, type Line } from "@/console/speak";
 import { cn } from "@/lib/utils";
 
 const VERSIONS = [
@@ -17,9 +18,19 @@ const DICT = [
 ];
 
 const HI_LINE = "Namaste, Club Mahindra se Meera bol rahi hoon, ek AI sahayak. Is call ko quality aur training ke liye record kiya ja sakta hai. Agar aap record nahi karwana chahte, toh bata dijiye. Kya aap theek hain?";
-const EN_LINE = "Hello, this is Meera from Club Mahindra, an AI assistant. This call may be recorded for quality and training. Tell me if you would rather not be recorded. How can I help you today?";
+const SAMPLE = "Namaste, main Meera bol rahi hoon. Kumbhalgarh mein aapke liye ek Studio available hai.";
+const EN_LINE ="Hello, this is Meera from Club Mahindra, an AI assistant. This call may be recorded for quality and training. Tell me if you would rather not be recorded. How can I help you today?";
 
 export default function AgentStudio() {
+  const speaker = useSpeaker();
+  const PlayBtn = ({ id, lines, label = "Play", variant = "outline" as const, className }: { id: string; lines: Line[]; label?: string; variant?: "outline" | "dark"; className?: string }) => {
+    const on = speaker.playingId === id;
+    return (
+      <Btn size="sm" variant={variant} className={className} onClick={() => speaker.play(id, lines)} disabled={!speaker.supported} title={speaker.supported ? undefined : "Speech is not available in this browser"}>
+        {on ? <Square className="h-3 w-3 fill-current" /> : <Play className="h-3 w-3" />} {on ? "Stop" : label}
+      </Btn>
+    );
+  };
   return (
     <>
       <PageTitle crumb="Build / Agent studio / Club Mahindra member line" title="Shape how Meera sounds and speaks" actions={<><Btn>Test in browser</Btn><Btn>Compare v7 with v6</Btn></>} />
@@ -61,7 +72,7 @@ export default function AgentStudio() {
           </Panel>
 
           <Panel>
-            <PanelHeader title="Opening line" hint="First thing every caller hears" right={<span className="flex items-center gap-2"><Pill tone="amber">Required wording</Pill><Btn size="sm"><Play className="h-3 w-3" /> Play both</Btn></span>} />
+            <PanelHeader title="Opening line" hint="First thing every caller hears" right={<span className="flex items-center gap-2"><Pill tone="amber">Required wording</Pill><PlayBtn id="opening" label="Play both" lines={[{ text: HI_LINE, lang: "HI" }, { text: EN_LINE, lang: "EN" }]} /></span>} />
             <div className="space-y-3 p-4">
               <OpeningLine lang="HI" text={HI_LINE} note="Shown to members who prefer Hindi. 22 seconds spoken." />
               <OpeningLine lang="EN" text={EN_LINE} note="Used when language detect returns English." />
@@ -79,7 +90,7 @@ export default function AgentStudio() {
                   <tr key={w} className="border-t border-zinc-100">
                     <Td className="font-medium">{w}</Td>
                     <Td className="text-zinc-600">{s}</Td>
-                    <Td className="text-right"><Btn size="sm"><Play className="h-3 w-3" /> Play</Btn></Td>
+                    <Td className="text-right"><PlayBtn id={`dict:${w}`} lines={[{ text: w, lang: /^[A-Za-z ]+$/.test(w) && w.startsWith("Member") ? "EN" : "HI", rate: 0.9 }]} /></Td>
                   </tr>
                 ))}
               </tbody>
@@ -89,8 +100,8 @@ export default function AgentStudio() {
           <Panel>
             <PanelHeader title="Voice" hint="Changes apply to new calls only" />
             <div className="grid gap-3 p-4 sm:grid-cols-2">
-              <VoiceCard emoji="🎤" name="Aarti Indic" vendor="Azure Speech" desc="en-IN-AartiIndicNeural. Natural Hindi and English switching." selected />
-              <VoiceCard emoji="🧊" name="marin" vendor="gpt-realtime voice" desc="Speech to speech. Lower latency, less control over Hindi names." />
+              <VoiceCard emoji="🎤" name="Aarti Indic" vendor="Azure Speech" desc="en-IN-AartiIndicNeural. Natural Hindi and English switching." selected play={<PlayBtn id="voice:aarti" label="Play sample" variant="dark" className="mt-3" lines={[{ text: SAMPLE, lang: "HI" }]} />} />
+              <VoiceCard emoji="🧊" name="marin" vendor="gpt-realtime voice" desc="Speech to speech. Lower latency, less control over Hindi names." play={<PlayBtn id="voice:marin" label="Play sample" className="mt-3" lines={[{ text: SAMPLE, lang: "EN", rate: 1.1 }]} />} />
             </div>
             <div className="space-y-4 px-4 pb-4">
               <Slider label="Speed" pct={56} value="1.05x, steady" />
@@ -121,7 +132,7 @@ function OpeningLine({ lang, text, note }: { lang: "HI" | "EN"; text: string; no
   );
 }
 
-function VoiceCard({ emoji, name, vendor, desc, selected }: { emoji: string; name: string; vendor: string; desc: string; selected?: boolean }) {
+function VoiceCard({ emoji, name, vendor, desc, selected, play }: { emoji: string; name: string; vendor: string; desc: string; selected?: boolean; play: React.ReactNode }) {
   return (
     <div className={cn("rounded-xl border p-4", selected ? "border-[#E2703A] bg-[#FDF6F1]" : "border-zinc-200")}>
       <div className="flex items-center gap-3">
@@ -133,7 +144,7 @@ function VoiceCard({ emoji, name, vendor, desc, selected }: { emoji: string; nam
         {selected && <Pill tone="orange">Selected</Pill>}
       </div>
       <p className="mt-3 text-xs text-zinc-600">{desc}</p>
-      <Btn size="sm" variant={selected ? "dark" : "outline"} className="mt-3"><Play className="h-3 w-3" /> Play sample</Btn>
+      {play}
     </div>
   );
 }

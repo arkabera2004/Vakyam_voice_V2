@@ -1,5 +1,9 @@
+import { Play, Square } from "lucide-react";
 import { Btn, IconTile, KV, PageTitle, Panel, PanelHeader, Pill, Td, Th, Toggle } from "@/console/ui";
+import { useSpeaker } from "@/console/speak";
 import { cn } from "@/lib/utils";
+
+const DISCLOSURE = "Namaste, main Meera hoon, Club Mahindra ki AI assistant. Yeh call quality aur training ke liye record hoti hai. Kya aap is recording ke liye sahmat hain?";
 
 const PII = [
   ["Phone number", "Shown as +91 98XXXXXX10"],
@@ -20,6 +24,8 @@ const AUDIT = [
 const DAYS = [92, 95, 94, 96, 97, 70, 98, 96, 98, 99, 97, 96, 72, 98];
 
 export default function Compliance() {
+  const speaker = useSpeaker();
+  const playing = speaker.playingId === "disclosure";
   return (
     <>
       <PageTitle crumb="Govern, Club Mahindra member line, India region" title="Compliance and consent" actions={<><Btn>Export audit log</Btn><Btn variant="dark">Request deletion</Btn></>} />
@@ -28,10 +34,15 @@ export default function Compliance() {
         <IconTile emoji="🎤" size={52} className="rounded-xl" />
         <div className="min-w-[280px] flex-1">
           <p className="flex items-center gap-2 text-sm font-semibold">Opening disclosure, the first thing Meera says <Pill tone="green">Live, v4.2</Pill></p>
-          <p className="mt-1 text-base">Namaste, main Meera hoon, Club Mahindra ki AI assistant. Yeh call quality aur training ke liye record hoti hai. Kya aap is recording ke liye sahmat hain?</p>
+          <p className="mt-1 text-base">{DISCLOSURE}</p>
           <p className="mt-1.5 text-xs text-zinc-500">Covers AI assistant disclosure and recording consent. Approved by Kavita Rao on 6 Nov. Played before any account detail is read out.</p>
         </div>
-        <div className="flex flex-col gap-2"><Btn size="sm">Edit line</Btn><Btn size="sm">Play audio</Btn></div>
+        <div className="flex flex-col gap-2">
+          <Btn size="sm">Edit line</Btn>
+          <Btn size="sm" disabled={!speaker.supported} onClick={() => speaker.play("disclosure", [{ text: DISCLOSURE, lang: "HI" }])}>
+            {playing ? <Square className="h-3 w-3 fill-current" /> : <Play className="h-3 w-3" />} {playing ? "Stop" : "Play audio"}
+          </Btn>
+        </div>
       </Panel>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
