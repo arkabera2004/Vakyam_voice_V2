@@ -17,6 +17,9 @@ const QAScorecards = lazy(() => import("./pages/console/QAScorecards"));
 const AgentStudio = lazy(() => import("./pages/console/AgentStudio"));
 const Tools = lazy(() => import("./pages/console/Tools"));
 const Routing = lazy(() => import("./pages/console/Routing"));
+const Knowledge = lazy(() => import("./pages/console/Knowledge"));
+const Compliance = lazy(() => import("./pages/console/Compliance"));
+const Analytics = lazy(() => import("./pages/console/Analytics"));
 
 const Loading = () => <div className="p-8 text-sm text-zinc-500">Loading…</div>;
 
@@ -40,6 +43,9 @@ const App = () => (
               <Route path="studio" element={<AgentStudio />} />
               <Route path="tools" element={<Tools />} />
               <Route path="routing" element={<Routing />} />
+              <Route path="knowledge" element={<Knowledge />} />
+              <Route path="compliance" element={<Compliance />} />
+              <Route path="analytics" element={<Analytics />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
