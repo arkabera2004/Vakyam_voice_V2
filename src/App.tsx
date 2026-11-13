@@ -13,6 +13,8 @@ const LiveCalls = lazy(() => import("./pages/console/LiveCalls"));
 const LiveCallDetail = lazy(() => import("./pages/console/LiveCallDetail"));
 const WarmTransfer = lazy(() => import("./pages/console/WarmTransfer"));
 const CallReview = lazy(() => import("./pages/console/CallReview"));
+const QAScorecards = lazy(() => import("./pages/console/QAScorecards"));
+const AgentStudio = lazy(() => import("./pages/console/AgentStudio"));
 
 const Loading = () => <div className="p-8 text-sm text-zinc-500">Loading…</div>;
 
@@ -32,6 +34,8 @@ const App = () => (
               <Route path="live/:id" element={<LiveCallDetail />} />
               <Route path="transfers" element={<WarmTransfer />} />
               <Route path="review" element={<CallReview />} />
+              <Route path="qa" element={<QAScorecards />} />
+              <Route path="studio" element={<AgentStudio />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
