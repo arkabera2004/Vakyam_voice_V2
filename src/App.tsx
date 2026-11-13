@@ -15,6 +15,8 @@ const WarmTransfer = lazy(() => import("./pages/console/WarmTransfer"));
 const CallReview = lazy(() => import("./pages/console/CallReview"));
 const QAScorecards = lazy(() => import("./pages/console/QAScorecards"));
 const AgentStudio = lazy(() => import("./pages/console/AgentStudio"));
+const Tools = lazy(() => import("./pages/console/Tools"));
+const Routing = lazy(() => import("./pages/console/Routing"));
 
 const Loading = () => <div className="p-8 text-sm text-zinc-500">Loading…</div>;
 
@@ -36,6 +38,8 @@ const App = () => (
               <Route path="review" element={<CallReview />} />
               <Route path="qa" element={<QAScorecards />} />
               <Route path="studio" element={<AgentStudio />} />
+              <Route path="tools" element={<Tools />} />
+              <Route path="routing" element={<Routing />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
