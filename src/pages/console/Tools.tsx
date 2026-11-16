@@ -38,7 +38,6 @@ export default function Tools() {
   const { state, update, log } = useConsole();
   const { adapters } = state;
   const [configuring, setConfiguring] = useState<string | null>(null);
-  const [token, setToken] = useState("");
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({ name: "", kind: ADAPTER_KINDS[0] as string, url: "" });
   const [testing, setTesting] = useState(false);
@@ -61,17 +60,18 @@ export default function Tools() {
     setTesting(false);
     log(`Ran connection tests on ${names.length} adapters`, "Tools");
     const degraded = names.filter((n) => before[n] === "Degraded 1 retry");
-    toast({ title: `${names.length} adapters tested`, description: degraded.length ? `${degraded.join(", ")} still slow. Everything else answered first try.` : "All adapters answered first try." });
+    toast({ title: `${names.length} adapters tested (simulated)`, description: degraded.length ? `${degraded.join(", ")} still slow. No real adapter was contacted.` : "Simulated sweep only. No real adapter was contacted." });
   };
 
+  // shortcut: adapters are demo rows with no backend; "Connect" only flips the
+  // demo status. Real credential storage arrives with the adapter service.
   const saveConfig = () => {
     if (!configuring) return;
     const name = configuring;
     const wasOff = liveStatus(name) === "Not connected" || liveStatus(name) === "Planned";
-    set(name, token.trim() ? "Connected" : wasOff ? "Not connected" : liveStatus(name));
-    log(token.trim() ? `${name}: token saved, adapter connected` : `${name}: configuration reviewed`, "Tools");
-    toast({ title: token.trim() ? `${name} connected` : "Saved", description: token.trim() ? "Meera can call its verbs from the next call. Token is stored server side, never in the prompt." : `${name} settings unchanged.` });
-    setToken("");
+    if (wasOff) set(name, "Connected");
+    log(wasOff ? `${name}: marked connected (demo)` : `${name}: configuration reviewed (demo)`, "Tools");
+    toast({ title: wasOff ? `${name} marked connected (demo)` : "Saved", description: "Demo status only. No credentials are stored and no system is contacted." });
     setConfiguring(null);
   };
 
@@ -95,7 +95,7 @@ export default function Tools() {
 
   return (
     <>
-      <PageTitle crumb="Build / Tools and integrations" title="What Meera can reach, and how fast" actions={<><Btn onClick={runTests} disabled={testing}>{testing ? "Testing…" : "Run connection tests"}</Btn><Btn variant="primary" onClick={() => setAdding(true)}>Add adapter</Btn></>} />
+      <PageTitle crumb="Build / Tools and integrations · Demo data, no adapter is connected" title="What Meera can reach, and how fast" actions={<><Btn onClick={runTests} disabled={testing}>{testing ? "Testing…" : "Run connection tests"}</Btn><Btn variant="primary" onClick={() => setAdding(true)}>Add adapter</Btn></>} />
 
       <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
         <Panel className="overflow-x-auto">
@@ -173,9 +173,8 @@ export default function Tools() {
       </div>
 
       {configuring && (
-        <Modal title={`Configure ${configuring}`} hint="Tokens are stored in the adapter's secret store, never sent to the browser again." onClose={() => setConfiguring(null)} footer={<ModalActions onCancel={() => setConfiguring(null)} onOk={saveConfig} okLabel={liveStatus(configuring) === "Not connected" || liveStatus(configuring) === "Planned" ? "Connect" : "Save"} />}>
-          <p>Status: <Pill tone={TONE[liveStatus(configuring)]}>{liveStatus(configuring)}</Pill></p>
-          <Field label="API token or client secret"><input type="password" value={token} onChange={(e) => setToken(e.target.value)} className={inputClass} placeholder={liveStatus(configuring) === "Connected" ? "Leave blank to keep the current token" : "Paste a token to connect"} autoComplete="off" /></Field>
+        <Modal title={`Configure ${configuring}`} hint="Demo adapter. Credential entry is disabled until the adapter service exists; nothing typed here would be stored." onClose={() => setConfiguring(null)} footer={<ModalActions onCancel={() => setConfiguring(null)} onOk={saveConfig} okLabel={liveStatus(configuring) === "Not connected" || liveStatus(configuring) === "Planned" ? "Mark connected (demo)" : "Save"} />}>
+          <p>Status: <Pill tone={TONE[liveStatus(configuring)]}>{liveStatus(configuring)}</Pill> <Pill tone="amber">Mock</Pill></p>
           <Field label="Verbs exposed to Meera"><input readOnly value={[...CRM, ...extra].find((a) => a.name === configuring)?.verbs ?? "media, handoff"} className={inputClass + " bg-zinc-50 text-zinc-500"} /></Field>
           {liveStatus(configuring) !== "Not connected" && liveStatus(configuring) !== "Planned" && (
             <button className="text-xs font-medium text-red-600" onClick={() => { set(configuring, "Not connected"); log(`${configuring}: disconnected`, "Tools"); setConfiguring(null); toast({ title: `${configuring} disconnected`, description: "Its verbs are hidden from Meera until a token is saved again." }); }}>Disconnect this adapter</button>
