@@ -13,11 +13,10 @@ dist-ssr
 *.local
 supabase/.temp
 
-# Local environment credentials
-# .env
+# Local environment credentials (copy .env.example to .env)
+.env
 .env.*
 !.env.example
-!.env
 
 # Editor directories and files
 .vscode/*

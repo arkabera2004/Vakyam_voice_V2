@@ -21,6 +21,16 @@ jobs:
       - run: npm run build
       - run: npm audit --omit=dev --audit-level=high
 
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   auth-settings:
     # Fails while public signup is enabled on the Supabase project (GAP-S-01).
     runs-on: ubuntu-latest
