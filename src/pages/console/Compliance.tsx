@@ -52,7 +52,7 @@ export default function Compliance() {
     log(`Deletion request opened for ${del.member.trim()}${del.id ? `, member ${del.id}` : ""}: ${del.reason}`, ref);
     setModal(null);
     setDel({ member: "", id: "", reason: "Member asked under DPDP" });
-    toast({ title: `${ref} opened`, description: `Audio, transcripts and CRM notes for ${del.member.trim()} are purged within 7 days. You get a closing entry here.` });
+    toast({ title: `${ref} opened`, description: `Logged for ${del.member.trim()}. Nothing is purged automatically yet; the request must be actioned by hand.` });
   };
 
   const exportAudit = () => {
@@ -95,18 +95,19 @@ export default function Compliance() {
         </Panel>
 
         <Panel className="p-4">
-          <div className="flex items-center justify-between"><p className="text-sm font-semibold">Retention and data region</p><Pill tone="green">DPDP aligned</Pill></div>
+          <div className="flex items-center justify-between"><p className="text-sm font-semibold">Retention and data region</p><Pill tone="amber">Target policy</Pill></div>
           <div className="mt-1">
             <KV k="Call audio" v="90 days" />
             <KV k="Transcripts" v="12 months" />
             <KV k="Delete on request" v="Within 7 days" />
-            <KV k="Data region" v="India, Azure Central India" />
-            <KV k="Leaves region" v="Never, stays in region" vClass="text-emerald-600" />
+            <KV k="Data region" v="Set by the Azure resources" />
+            <KV k="Enforced today" v="Not yet, no audio or transcripts are stored" vClass="text-amber-700" />
           </div>
         </Panel>
 
         <Panel className="p-4">
           <div className="flex items-center justify-between"><p className="text-sm font-semibold">PII redaction in transcripts</p><span className={cn("text-xs", piiOn < 4 ? "font-medium text-red-600" : "text-zinc-500")}>{piiOn} of 4 on</span></div>
+          <p className="mt-1 text-[11px] text-amber-700">Policy only. Applies once transcripts are stored.</p>
           <ul className="mt-2">
             {PII.map(([k, v]) => (
               <li key={k} className="flex items-center gap-3 py-2.5">
@@ -120,7 +121,7 @@ export default function Compliance() {
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_2fr]">
         <Panel className="p-4">
-          <div className="flex items-center justify-between"><p className="text-sm font-semibold">TRAI DLT, outbound calls</p><Pill tone="green">All clear</Pill></div>
+          <div className="flex items-center justify-between"><p className="text-sm font-semibold">TRAI DLT, outbound calls</p><Pill tone="amber">Demo data</Pill></div>
           <KV k="Header" v={<span className="flex items-center gap-2">CLBMHN <Pill tone="green">Approved</Pill></span>} />
           <KV k="Number series" v={<span className="flex items-center gap-2">140 and 160 <Pill tone="green">Approved</Pill></span>} />
           <KV k="Consent registry" v={<span className="flex items-center gap-2">Synced 14:02 <Pill tone="green">Healthy</Pill></span>} />
@@ -142,7 +143,7 @@ export default function Compliance() {
         </Modal>
       )}
       {modal === "delete" && (
-        <Modal title="Request deletion" hint="Purges audio, transcripts and CRM notes for one member within 7 days, as DPDP requires." onClose={() => setModal(null)} footer={<ModalActions onCancel={() => setModal(null)} onOk={requestDeletion} okLabel="Open request" okDisabled={!del.member.trim()} danger />}>
+        <Modal title="Request deletion" hint="Records the request in the audit log. Automatic purging of audio, transcripts and CRM notes is not built yet." onClose={() => setModal(null)} footer={<ModalActions onCancel={() => setModal(null)} onOk={requestDeletion} okLabel="Open request" okDisabled={!del.member.trim()} danger />}>
           <Field label="Member name"><input value={del.member} onChange={(e) => setDel({ ...del, member: e.target.value })} className={inputClass} placeholder="Priya Sharma" /></Field>
           <Field label="Member ID (optional)"><input value={del.id} onChange={(e) => setDel({ ...del, id: e.target.value })} className={inputClass} placeholder="20418" /></Field>
           <Field label="Reason"><select value={del.reason} onChange={(e) => setDel({ ...del, reason: e.target.value })} className={inputClass}><option>Member asked under DPDP</option><option>Consent withdrawn mid call</option><option>Legal hold lifted</option></select></Field>
