@@ -63,7 +63,7 @@ export default function Home() {
             <p className="text-[13px] text-zinc-600">Meera v7 on Club Mahindra member line. {state.transfer.state === "ringing" ? 3 : 2} warm transfers waiting for a human.</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-5">
+        <div className="grid min-w-0 grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-5">
           <Stat value="1,284" label="Calls today" />
           <Stat value="71.4%" label="Contained by Meera" sub="+2.1 pts vs last week" />
           <Stat value="290" label="Warm transfers" />
@@ -122,11 +122,11 @@ export default function Home() {
       </Panel>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
-        <div>
+        <div className="min-w-0">
           <h2 className="mb-3 text-lg font-semibold">Language mix today</h2>
           <Panel className="p-4">
             <SegmentBar segments={[{ value: 46, color: "#18181b" }, { value: 31, color: "#E2703A" }, { value: 23, color: "#F3C3A6" }]} />
-            <div className="mt-4 flex justify-between gap-4">
+            <div className="mt-4 flex flex-wrap justify-between gap-4">
               <Stat value="46%" label="Hindi calls" />
               <Stat value="31%" label="English calls" />
               <Stat value="23%" label="Switch mid call" />
@@ -134,9 +134,9 @@ export default function Home() {
             </div>
           </Panel>
         </div>
-        <div>
+        <div className="min-w-0">
           <h2 className="mb-3 text-lg font-semibold">Tool calls today</h2>
-          <Panel className="flex items-start justify-between gap-4 p-4">
+          <Panel className="flex flex-wrap items-start justify-between gap-4 p-4">
             <Stat value="2,310" label="check_availability" />
             <Stat value="402" label="place_hold" />
             <Stat value="138" label="create_case" />
