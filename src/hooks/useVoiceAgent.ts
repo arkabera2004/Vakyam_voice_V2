@@ -45,6 +45,24 @@ export const requestSession = async (speechOnly = false) => {
   return { data, error: response.ok ? null : new Error(data?.error || `HTTP ${response.status}`) };
 };
 
+/**
+ * supabase.functions.invoke hides the function's JSON body behind a generic
+ * "non-2xx" message; read {error} from the response when there is one.
+ */
+export const functionErrorMessage = async (error: unknown): Promise<string | undefined> => {
+  if (!error) return undefined;
+  const context = (error as { context?: unknown }).context;
+  if (context instanceof Response) {
+    try {
+      const body = (await context.clone().json()) as { error?: unknown };
+      if (typeof body?.error === "string" && body.error) return body.error;
+    } catch {
+      /* not JSON */
+    }
+  }
+  return error instanceof Error ? error.message : undefined;
+};
+
 const getErrorMessage = (value: unknown): string => {
   if (value instanceof DOMException && value.name === "NotAllowedError") {
     return "Microphone access was blocked. Allow the microphone for this site and try again.";
@@ -127,7 +145,7 @@ export const useVoiceAgent = (): UseVoiceAgentReturn => {
 
       const { data, error: tokenError } = session;
       if (tokenError || !data?.token || !data?.callUrl) {
-        throw new Error(data?.error || tokenError?.message || "Failed to get a voice session");
+        throw new Error(data?.error || (await functionErrorMessage(tokenError)) || "Failed to get a voice session");
       }
       if (data.speech) {
         const { SpeechOutput } = await import("@/lib/speechOutput");
