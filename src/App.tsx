@@ -8,6 +8,7 @@ import { ConsoleProvider } from "@/console/store";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/ResetPassword";
 
 const Home = lazy(() => import("./pages/console/Home"));
 const LiveCalls = lazy(() => import("./pages/console/LiveCalls"));
@@ -33,6 +34,7 @@ const App = () => (
         <Suspense fallback={<Loading />}>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/reset" element={<ResetPassword />} />
             <Route path="/" element={<Navigate to="/console" replace />} />
             <Route path="/voice" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/console" element={<ProtectedRoute><ConsoleProvider><ConsoleShell /></ConsoleProvider></ProtectedRoute>}>
