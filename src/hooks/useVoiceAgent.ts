@@ -26,16 +26,20 @@ interface Call {
 }
 
 /**
- * Asks for a voice session. VITE_REALTIME_TOKEN_URL points at a locally served
- * copy of the realtime-token function, for trying changes before deploying it.
+ * Asks for a voice session. With speechOnly, only an Azure Speech token comes
+ * back and no realtime session is spent. VITE_REALTIME_TOKEN_URL points at a
+ * locally served copy of the realtime-token function, for trying changes
+ * before deploying it.
  */
-export const requestSession = async () => {
+export const requestSession = async (speechOnly = false) => {
+  const body = { speechOnly };
   const localUrl = import.meta.env.VITE_REALTIME_TOKEN_URL as string | undefined;
-  if (!localUrl) return supabase.functions.invoke("realtime-token");
+  if (!localUrl) return supabase.functions.invoke("realtime-token", { body });
   const { data: auth } = await supabase.auth.getSession();
   const response = await fetch(localUrl, {
     method: "POST",
-    headers: { Authorization: `Bearer ${auth.session?.access_token ?? ""}` },
+    headers: { Authorization: `Bearer ${auth.session?.access_token ?? ""}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
   const data = await response.json();
   return { data, error: response.ok ? null : new Error(data?.error || `HTTP ${response.status}`) };

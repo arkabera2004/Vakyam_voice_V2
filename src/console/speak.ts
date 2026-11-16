@@ -51,7 +51,7 @@ export function useSpeaker() {
     if (azureRef.current) return azureRef.current;
     try {
       const [{ requestSession }, { SpeechOutput }] = await Promise.all([import("@/hooks/useVoiceAgent"), import("@/lib/speechOutput")]);
-      const { data } = await requestSession();
+      const { data } = await requestSession(true);
       if (!data?.speech) return null;
       const context = new AudioContext({ sampleRate: 24000 });
       const entry = { speech: null as unknown as SpeechOutput, context, speaking: false, waiters: [] as (() => void)[] };
