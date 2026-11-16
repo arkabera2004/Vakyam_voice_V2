@@ -28,3 +28,6 @@ supabase/.temp
 *.njsproj
 *.sln
 *.sw?
+
+# Deno lockfile written by `deno check` on the edge function
+deno.lock
