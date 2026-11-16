@@ -100,9 +100,9 @@ export default function QAScorecards() {
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.2fr]">
-        <Panel>
+        <Panel className="overflow-x-auto">
           <PanelHeader title="Rubric by prompt version" hint={`Mean score, Meera v7, ${range.toLowerCase()}, ${desk}`} />
-          <table className="w-full">
+          <table className="w-full min-w-[460px]">
             <thead className="bg-zinc-50">
               <tr>
                 <Th>Criterion</Th>
@@ -127,9 +127,9 @@ export default function QAScorecards() {
           </div>
         </Panel>
 
-        <Panel>
+        <Panel className="overflow-x-auto">
           <PanelHeader title="Flagged calls" hint="Any criterion under 75, newest first" right={<Pill tone="red">{flagged.length + 15} open</Pill>} />
-          <table className="w-full">
+          <table className="w-full min-w-[560px]">
             <thead className="bg-zinc-50">
               <tr><Th>Call</Th><Th>Member</Th><Th>Criterion</Th><Th>Score</Th><Th>Reviewer</Th><Th /></tr>
             </thead>
