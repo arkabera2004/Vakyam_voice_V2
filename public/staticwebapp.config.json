@@ -1,11 +1,13 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/assets/*", "/fonts/*", "*.{css,js,svg,png,ico,ttf,txt,json}"]
+    "exclude": ["/assets/*", "/brand/*", "/fonts/*", "*.{css,js,svg,png,ico,ttf,txt,json}"]
   },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Permissions-Policy": "microphone=(self)"
+    "Permissions-Policy": "microphone=(self), camera=(), geolocation=()",
+    "X-Frame-Options": "DENY",
+    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.openai.azure.com wss://*.tts.speech.microsoft.com https://*.api.cognitive.microsoft.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
   }
 }
