@@ -162,8 +162,8 @@ Status words follow EXECUTIVE_SUMMARY.md. "Verification required" states what th
 ### GAP-F-12 Login video asset missing (`public/auth-flow.mp4`)
 - Optional; fallback works.
 
-### GAP-F-13 New official Vakyam logo not yet integrated
-- Blocked on asset delivery (tile PNG/SVG and horizontal lockup). Old Wayam "W" mark in `src/assets/wayam-icon.svg`, `public/favicon.*`, `public/wayam-logo-dark.svg`.
+### GAP-F-13 New official Vakyam logo — DONE 2026-11-16 (commits e4bb86e…ea024ef)
+- Tile, dark lockup, favicon.ico, apple-touch-icon and og image live under `public/brand/` and `public/`; old Wayam marks removed. Remaining limitation: assets were extracted from a lossless Retina screenshot of the design page (tile 246 px vs 256 px source, lockup 772 px). Ask for the vector master before print or large hero use.
 
 ### GAP-F-15 `/console/alerts` has no active state in the desktop sidebar
 - The route exists only in `MOBILE_TABS` (`ConsoleShell.tsx:92-97`), not in `NAV`. On desktop the page renders with no highlighted item.
