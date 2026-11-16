@@ -1,5 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { useOrg, type Me } from "@/hooks/useOrg";
+export const KEY = "vakyam-console-v1";
 
 /** Everything the supervisor changes in the console, persisted per browser so a demo survives reloads. */
 export type AuditRow = { when: string; who: string; change: string; version: string };
@@ -78,56 +77,6 @@ export const DEFAULT_STATE: ConsoleState = {
   ],
 };
 
-const KEY = "vakyam-console-v1";
-
 export function nowLabel(d = new Date()) {
   return `${d.getDate()} ${d.toLocaleString("en-IN", { month: "short" })}, ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-
-function load(): ConsoleState {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? { ...DEFAULT_STATE, ...JSON.parse(raw) } : DEFAULT_STATE;
-  } catch {
-    return DEFAULT_STATE;
-  }
-}
-
-type Ctx = {
-  state: ConsoleState;
-  /** The signed-in user: profile name and organisation role. */
-  me: Me;
-  /** Shallow-merge a patch, or compute one from the previous state. */
-  update: (patch: Partial<ConsoleState> | ((s: ConsoleState) => Partial<ConsoleState>)) => void;
-  /** Prepend an audit row, as every governed change must. */
-  log: (change: string, version: string, who?: string) => void;
-  reset: () => void;
-};
-
-const ConsoleCtx = createContext<Ctx | null>(null);
-
-export function ConsoleProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<ConsoleState>(load);
-  const me = useOrg();
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(state));
-    } catch {
-      /* private mode: demo still works for this tab */
-    }
-  }, [state]);
-
-  const update = useCallback<Ctx["update"]>((patch) => setState((s) => ({ ...s, ...(typeof patch === "function" ? patch(s) : patch) })), []);
-  const log = useCallback<Ctx["log"]>((change, version, who = me.name) => update((s) => ({ audit: [{ when: nowLabel(), who, change, version }, ...s.audit] })), [update, me.name]);
-  const reset = useCallback(() => setState(DEFAULT_STATE), []);
-
-  const value = useMemo(() => ({ state, me, update, log, reset }), [state, me, update, log, reset]);
-  return <ConsoleCtx.Provider value={value}>{children}</ConsoleCtx.Provider>;
-}
-
-export function useConsole() {
-  const ctx = useContext(ConsoleCtx);
-  if (!ctx) throw new Error("useConsole must be used inside ConsoleProvider");
-  return ctx;
 }
