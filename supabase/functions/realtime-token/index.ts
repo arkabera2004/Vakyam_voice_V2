@@ -3,8 +3,9 @@ import { buildDemoContext } from "./inventory.ts";
 import { FIRST_MESSAGE, INSTRUCTIONS, TEXT_INSTRUCTIONS } from "./prompt.ts";
 import { countFromContentRange, limitFromEnv, overLimit, parseTokenRequest } from "./limits.ts";
 
+// Set ALLOWED_ORIGIN to the app's origin in production; "*" is for local dev.
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -128,8 +129,9 @@ serve(async (req) => {
     // webrtcfilter=on keeps the prompt out of the events sent to the browser.
     return json({ token, callUrl: `${base}/calls?webrtcfilter=on`, firstMessage: FIRST_MESSAGE, speech });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error in realtime-token:", message);
-    return json({ error: message }, 500);
+    // Details (which secret is missing, what Azure said) stay in the function
+    // logs; the browser gets a generic message (GAP-S-08).
+    console.error("Error in realtime-token:", error instanceof Error ? error.message : error);
+    return json({ error: "The voice service is not available right now. Please try again later." }, 500);
   }
 });
