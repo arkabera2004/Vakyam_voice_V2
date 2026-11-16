@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { WayamMark } from "@/components/brand/WayamMark";
 import { VoiceFlowBackdrop } from "@/components/brand/VoiceFlowBackdrop";
 
 /** Drop a Google Flow export at public/auth-flow.mp4 to use it under the glow. */
@@ -62,9 +61,10 @@ const Login = () => {
 
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
-          <WayamMark size={72} className="mb-4 shadow-[0_12px_40px_rgba(255,161,43,0.35)]" />
-          <h1 className="font-display text-4xl font-semibold tracking-tight text-white">Vakyam</h1>
-          <p className="mt-1 text-sm text-white/70">Voice Agents by Wayam</p>
+          <h1 className="m-0">
+            <img src="/brand/vakyam-lockup.png" alt="Vakyam" width={772} height={168} className="h-14 w-auto drop-shadow-[0_12px_40px_rgba(255,161,43,0.35)]" />
+          </h1>
+          <p className="mt-3 text-sm text-white/70">Voice Agents by Wayam</p>
         </div>
 
         <Card className="border-white/10 bg-black/30 shadow-none backdrop-blur-xl">
