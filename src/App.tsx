@@ -29,7 +29,7 @@ const Loading = () => <div className="p-8 text-sm text-zinc-500">Loading…</div
 const App = () => (
   <>
     <Toaster />
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <Suspense fallback={<Loading />}>
           <Routes>
