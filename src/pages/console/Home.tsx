@@ -5,6 +5,7 @@ import { useConsole } from "@/console/store";
 import { Modal, ModalActions } from "@/console/Modal";
 import { downloadCsv } from "@/console/export";
 import { toast } from "@/hooks/use-toast";
+import { greeting, todayLabel } from "@/console/clock";
 
 type Item = { id: string; emoji: string; title: string; detail: string; risk: string; riskTone: Tone; waiting: string; due: string; dueHot?: boolean; action: string; primary?: boolean; to?: string; decide?: { ok: string; no: string; done: string } };
 
@@ -48,8 +49,8 @@ export default function Home() {
     <>
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="mb-1 text-[13px] text-zinc-500">Thursday, 12 November, 14:10 IST</p>
-          <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.02em]">Good afternoon. Meera is handling 71% of calls.</h1>
+          <p className="mb-1 text-[13px] text-zinc-500">{todayLabel()}</p>
+          <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.02em]">{greeting()}. Meera is handling 71% of calls.</h1>
         </div>
         <Btn onClick={exportShift}>Export shift report</Btn>
       </div>

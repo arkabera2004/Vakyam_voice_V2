@@ -4,6 +4,7 @@ import { useConsole, type Campaign } from "@/console/store";
 import { Modal, Field, inputClass, ModalActions } from "@/console/Modal";
 import { routeCall, type SimInput } from "@/console/data/routing";
 import { toast } from "@/hooks/use-toast";
+import { istClock, istHour } from "@/console/clock";
 
 const RULES = [
   { title: "VIP Platinum goes to Meera first", body: "Platinum members skip the queue and reach Meera with the concierge prompt, such as Rohan Mehta.", tag: "Priority 1", tone: "purple" as Tone },
@@ -21,6 +22,7 @@ export default function Routing() {
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({ name: "", total: "500", series: "160 service", start: "tomorrow 09:00" });
   const result = sim && routeCall(sim);
+  const nowMinutes = istHour() * 60 + Number(istClock().slice(3));
 
   const toggle = (c: Campaign) => {
     if (c.status === "Completed") return;
@@ -94,14 +96,14 @@ export default function Routing() {
 
           <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
             <Panel>
-              <PanelHeader title="Calling window" hint="India Standard Time, now 14:10" />
+              <PanelHeader title="Calling window" hint={`India Standard Time, now ${istClock()}`} />
               <div className="p-4">
                 <div className="flex justify-between text-[11px] text-zinc-500"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
                 <div className="relative mt-2 h-24 rounded-lg bg-zinc-50">
                   <div className="absolute left-[37.5%] top-3 flex h-10 w-[50%] items-center justify-end rounded-md bg-[#E2703A] pr-3 text-xs font-semibold text-white">09:00 to 21:00</div>
                   <div className="absolute left-0 bottom-3 flex h-10 w-[33%] items-center rounded-md bg-zinc-900 px-3 text-xs font-medium text-white">Meera after hours</div>
                   <div className="absolute right-0 bottom-3 h-10 w-[12%] rounded-md bg-zinc-900" />
-                  <div className="absolute left-[59%] top-0 h-full w-px bg-emerald-600" title="now 14:10" />
+                  <div className="absolute top-0 h-full w-px bg-emerald-600" style={{ left: `${(nowMinutes / 1440) * 100}%` }} title={`now ${istClock()}`} />
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                   <div className="rounded-lg bg-zinc-50 p-3"><p className="font-semibold">Series 160, service</p><p className="text-zinc-500">Renewals, stay feedback</p></div>
