@@ -161,7 +161,7 @@ export function ConsoleShell() {
         </nav>
 
         <div className="mx-3 mb-3 rounded-lg border border-zinc-200 p-3 text-xs">
-          <p className="font-medium text-zinc-700">AI cost this month</p>
+          <p className="font-medium text-zinc-700">AI cost this month <span className="font-normal text-zinc-400">(demo)</span></p>
           <div className="mt-1.5 flex justify-between text-zinc-500">
             <span>Voice minutes</span>
             <span className="text-zinc-800">₹1.42L / ₹4L</span>
@@ -191,9 +191,9 @@ export function ConsoleShell() {
           <p className="truncate text-[13px] text-zinc-600">{crumb}</p>
           <div className="flex items-center gap-2">
             <span className="hidden rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] text-zinc-600 sm:inline">Meera v7 · Club Mahindra desk</span>
-            <button className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100" aria-label="Notifications">
+            <Link to="/console/alerts" className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100" aria-label="Alerts">
               <Bell className="h-4 w-4" />
-            </button>
+            </Link>
             <Link to="/voice" className="hidden sm:block">
               <Btn variant="ghost" size="sm">
                 <Mic className="h-3.5 w-3.5" /> Talk to Meera

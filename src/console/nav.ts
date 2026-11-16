@@ -1,4 +1,5 @@
 import {
+  Bell,
   Home,
   Phone,
   ArrowLeftRight,
@@ -24,6 +25,7 @@ export const NAV: { group?: string; items: NavItem[] }[] = [
       { to: "/console/transfers", label: "Warm transfers", icon: ArrowLeftRight, badge: "3", badgeTone: "muted" },
       { to: "/console/review", label: "Call review", icon: PlayCircle },
       { to: "/console/qa", label: "QA scorecards", icon: ClipboardCheck },
+      { to: "/console/alerts", label: "Alerts", icon: Bell },
     ],
   },
   {
