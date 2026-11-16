@@ -14,7 +14,7 @@ const ALERTS = [
 
 /** Phone-first alert feed. On desktop it renders as a narrow column so the same route works everywhere. */
 export default function MobileSupervisor() {
-  const { state, update, log } = useConsole();
+  const { state, me, update, log } = useConsole();
   const rohanOpen = !state.decided["refund-5521"];
   const alerts = ALERTS.filter((a) => !state.decided[a.id] && !(a.id === "transfers" && state.transfer.state !== "ringing") && !(a.id === "freshdesk" && state.adapters.Freshdesk === "Connected"));
   const count = alerts.length + (rohanOpen ? 1 : 0) + 1;
@@ -32,7 +32,7 @@ export default function MobileSupervisor() {
         <WayamMark size={36} />
         <div className="flex-1">
           <p className="text-lg font-semibold leading-tight">Pune desk</p>
-          <p className="text-xs text-zinc-500">Kavita Rao, floor supervisor</p>
+          <p className="text-xs text-zinc-500">{me.name}{me.role ? `, ${me.role}` : ""}</p>
         </div>
         <Pill tone="green">14 live</Pill>
       </div>

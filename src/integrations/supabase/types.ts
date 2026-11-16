@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      // organisations and org_members are hand-added from
+      // supabase/migrations/20261116150000_domain_schema.sql; regenerate this
+      // file with `supabase gen types` once the migration is applied.
+      organisations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      org_members: {
+        Row: {
+          created_at: string
+          org_id: string
+          role: "admin" | "supervisor" | "agent"
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          org_id: string
+          role: "admin" | "supervisor" | "agent"
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          org_id?: string
+          role?: "admin" | "supervisor" | "agent"
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

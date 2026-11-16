@@ -69,7 +69,7 @@ export default function Compliance() {
         <div className="min-w-[280px] flex-1">
           <p className="flex items-center gap-2 text-sm font-semibold">Opening disclosure, the first thing Meera says <Pill tone="green">Live, {disclosure.version}</Pill></p>
           <p className="mt-1 text-base">{disclosure.text}</p>
-          <p className="mt-1.5 text-xs text-zinc-500">Covers AI assistant disclosure and recording consent. Approved by Kavita Rao. Played before any account detail is read out.</p>
+          <p className="mt-1.5 text-xs text-zinc-500">Covers AI assistant disclosure and recording consent. Approvals are in the audit log below. Played before any account detail is read out.</p>
         </div>
         <div className="flex flex-col gap-2">
           <Btn size="sm" onClick={() => { setDraft(disclosure.text); setModal("edit"); }}>Edit line</Btn>

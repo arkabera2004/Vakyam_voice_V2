@@ -99,7 +99,8 @@ const MOBILE_TABS = [
 export function ConsoleShell() {
   const pathname = useLocation().pathname.replace(/\/+$/, "") || "/";
   const { signOut } = useAuth();
-  const { state, reset } = useConsole();
+  const { state, me, reset } = useConsole();
+  const roleLine = me.role ? `${me.role[0].toUpperCase()}${me.role.slice(1)} · ${me.orgName ?? "organisation"}` : "No organisation yet";
   const liveId = Number(pathname.split("/console/live/")[1]);
   const liveCall = LIVE_CALLS.find((c) => c.id === liveId);
   const crumb = CRUMBS[pathname] ?? (liveCall ? `Live calls / Call ${liveCall.id}, ${liveCall.name}` : "Console");
@@ -171,10 +172,10 @@ export function ConsoleShell() {
         </div>
 
         <div className="flex items-center gap-2.5 border-t border-zinc-200 px-4 py-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white">K</span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold uppercase text-white">{me.name[0]}</span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-medium">Kavita Rao</p>
-            <p className="truncate text-[11px] text-zinc-500">Floor supervisor · Pune</p>
+            <p className="truncate text-[13px] font-medium" title={me.name}>{me.name}</p>
+            <p className="truncate text-[11px] text-zinc-500">{me.loading ? "…" : roleLine}</p>
           </div>
           <button onClick={resetDemo} title="Reset demo data" aria-label="Reset demo data" className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700">
             <RotateCcw className="h-4 w-4" />

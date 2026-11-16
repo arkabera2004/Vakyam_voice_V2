@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Btn, IconTile, PageTitle, Panel, PanelHeader, Pill, Td, Th, Toggle } from "@/console/ui";
-import { useConsole, nowLabel, SUPERVISOR } from "@/console/store";
+import { useConsole, nowLabel } from "@/console/store";
 import { Modal, Field, inputClass, ModalActions } from "@/console/Modal";
 import { answerPolicy, type PolicyAnswer } from "@/console/data/policy";
 import { toast } from "@/hooks/use-toast";
@@ -18,7 +18,8 @@ const HINGLISH = "Mujhe 38,400 ka refund chahiye, booking Kumbhalgarh ki thi";
 const ENGLISH = "Can I move my Goa booking to next weekend?";
 
 export default function Knowledge() {
-  const { state, update, log } = useConsole();
+  const { state, me, update, log } = useConsole();
+  const SUPERVISOR = me.name;
   const [question, setQuestion] = useState(ENGLISH);
   const [answer, setAnswer] = useState<PolicyAnswer>(() => answerPolicy(ENGLISH, state.gates));
   const [modal, setModal] = useState<null | "source" | "history">(null);
@@ -143,7 +144,7 @@ export default function Knowledge() {
         <Modal title="Add a knowledge source" hint="Articles are chunked and indexed. Meera cites the article in every answer that uses it." onClose={() => setModal(null)} footer={<ModalActions onCancel={() => setModal(null)} onOk={addSource} okLabel="Add source" okDisabled={!src.name.trim()} />}>
           <Field label="Name"><input value={src.name} onChange={(e) => setSrc({ ...src, name: e.target.value })} className={inputClass} placeholder="Festival blackout dates" /></Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Owner"><select value={src.owner} onChange={(e) => setSrc({ ...src, owner: e.target.value })} className={inputClass}><option>Kavita Rao</option><option>Asha Nair</option></select></Field>
+            <Field label="Owner"><select value={src.owner} onChange={(e) => setSrc({ ...src, owner: e.target.value })} className={inputClass}><option>{SUPERVISOR}</option><option>Asha Nair</option></select></Field>
             <Field label="Articles"><input type="number" min={1} value={src.articles} onChange={(e) => setSrc({ ...src, articles: e.target.value })} className={inputClass} /></Field>
           </div>
         </Modal>
