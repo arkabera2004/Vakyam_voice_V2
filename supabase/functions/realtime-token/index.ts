@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { buildDemoContext } from "./inventory.ts";
 import { FIRST_MESSAGE, INSTRUCTIONS, TEXT_INSTRUCTIONS } from "./prompt.ts";
+import { countFromContentRange, limitFromEnv, overLimit, parseTokenRequest } from "./limits.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,13 +37,56 @@ serve(async (req) => {
     // nothing (the publishable key is also sent as a bearer), so ask Supabase
     // Auth whether it is a live user session.
     const authHeader = req.headers.get("Authorization");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || req.headers.get("apikey") || "";
     const userResponse = authHeader?.startsWith("Bearer ")
-      ? await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, {
+      ? await fetch(`${supabaseUrl}/auth/v1/user`, {
           headers: { Authorization: authHeader, apikey: supabaseKey },
         })
       : null;
     if (!userResponse?.ok) return json({ error: "Unauthorized" }, 401);
+
+    // The console's voice previews only need a Speech token; they must not
+    // spend a realtime session (GAP-B-05).
+    const { speechOnly } = parseTokenRequest(req.method === "POST" ? await req.text() : null);
+    if (speechOnly && !indianVoice) return json({ error: "Azure Speech is not configured" }, 404);
+
+    // Rate limit per user, counted and recorded with the caller's own JWT
+    // under RLS on public.voice_sessions (GAP-S-02).
+    const rest = `${supabaseUrl}/rest/v1/voice_sessions`;
+    const restHeaders = { Authorization: authHeader!, apikey: supabaseKey, "Content-Type": "application/json" };
+    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const countResponse = await fetch(`${rest}?select=id&created_at=gte.${since}&limit=1`, {
+      headers: { ...restHeaders, Prefer: "count=exact" },
+    });
+    if (!countResponse.ok) throw new Error(`Could not read voice_sessions (${countResponse.status})`);
+    const limit = limitFromEnv(Deno.env.get("VOICE_SESSIONS_PER_HOUR"));
+    if (overLimit(countFromContentRange(countResponse.headers.get("content-range")), limit)) {
+      return json({ error: `Too many voice sessions. The limit is ${limit} per hour.` }, 429);
+    }
+    const recorded = await fetch(rest, {
+      method: "POST",
+      headers: { ...restHeaders, Prefer: "return=minimal" },
+      body: JSON.stringify({ kind: speechOnly ? "speech" : "realtime" }),
+    });
+    if (!recorded.ok) throw new Error(`Could not record the voice session (${recorded.status})`);
+
+    // A Speech token lasts ten minutes, as long as the longest call.
+    const speechTokenRequest = indianVoice
+      ? fetch(`https://${speechRegion}.api.cognitive.microsoft.com/sts/v1.0/issueToken`, {
+          method: "POST",
+          headers: { "Ocp-Apim-Subscription-Key": speechKey!, "Content-Length": "0" },
+        })
+      : null;
+
+    if (speechOnly) {
+      const speechResponse = await speechTokenRequest!;
+      if (!speechResponse.ok) {
+        console.error("Azure Speech token error:", speechResponse.status, await speechResponse.text());
+        throw new Error(`Azure Speech refused the session (${speechResponse.status})`);
+      }
+      return json({ speech: { token: await speechResponse.text(), region: speechRegion, voice: speechVoice } });
+    }
 
     // The prompt and voice are fixed here, server-side. The browser only gets
     // a short-lived token bound to this session configuration.
@@ -63,13 +107,7 @@ serve(async (req) => {
           },
         }),
       }),
-      // A Speech token lasts ten minutes, as long as the longest call.
-      indianVoice
-        ? fetch(`https://${speechRegion}.api.cognitive.microsoft.com/sts/v1.0/issueToken`, {
-            method: "POST",
-            headers: { "Ocp-Apim-Subscription-Key": speechKey!, "Content-Length": "0" },
-          })
-        : null,
+      speechTokenRequest,
     ]);
 
     if (!tokenResponse.ok) {
