@@ -1,5 +1,9 @@
 # NEXT SESSION PROMPT — VAKYAM VOICE V2 PRODUCTION READINESS IMPLEMENTATION
 
+> **Progress note (2026-11-16 implementation session, commits `9fcba7d` → `117fbd4`).** Done: CI quality gates + gitleaks + signup check; `.env` untracked; `realtime-token` rate limit, speech-only path, generic 500, CORS origin; organisation-scoped schema, demo seed and pgTAP tests (written, **not applied**); `useOrg()` with real profile name; password reset; `npm audit fix` (0 high/critical in prod); CSP/headers; Tools and Compliance honest labelling; login redirect; phone overflow; Alerts nav; router flags; lint 0 warnings; Playwright public-surface suite. See `PRODUCTION_GAP_REGISTER.md` status table and `TEST_EXECUTION_REPORT.md` §7.
+>
+> **Before any further code, a human with access must:** (1) turn off "Allow new users to sign up" in the Supabase dashboard and confirm `bash scripts/check-auth-settings.sh` passes; (2) `npx supabase login && npx supabase link --project-ref eshtcyzraxojwkzqgqld && npx supabase db push`, then `npx supabase test db` with a local stack, then `npx supabase gen types typescript --linked > src/integrations/supabase/types.ts`; (3) `npx supabase functions deploy realtime-token` and `npx supabase secrets set VOICE_SESSIONS_PER_HOUR=10 ALLOWED_ORIGIN=<app origin>`; (4) set `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` as GitHub repository **variables** so the CI `auth-settings` and `e2e` jobs run. Items 6–9 and 13 below start only after step 2.
+
 Copy everything below this line into a fresh Claude Code session. It is self-contained.
 
 ---

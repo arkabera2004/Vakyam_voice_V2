@@ -1,5 +1,41 @@
 # Vakyam Voice V2 — Production Gap Register
 
+## Status after the 2026-11-16 implementation session
+
+| Item | Status | Commit(s) | Remaining |
+|---|---|---|---|
+| GAP-S-01 signup | **Code done, switch pending** | `16964bc` | Flip "Allow new users to sign up" off in the dashboard; CI job `auth-settings` fails until then |
+| GAP-S-02 rate limit | **Code done, deploy pending** | `ee31e74`, `b8032da` | Apply `voice_sessions` migration, deploy function, set `VOICE_SESSIONS_PER_HOUR` |
+| GAP-D-03 `.env` tracked | **Done** | `dcafc2d` | — |
+| GAP-F-01 schema foundation | **Written, apply pending** | `448bc2e` | `supabase db push`, run pgTAP, regenerate types |
+| GAP-B-01 roles/tenant (SPA) | **Part 1 done** (`useOrg`, real name) | `9cc8dfb` | Role-gated controls once `org_members` exists |
+| GAP-S-03 audit log server-side | Schema + `log_audit()` written | `448bc2e` | Wire screens (blocked on apply) |
+| GAP-S-04 compliance claims | **Done** | `860305b` | Verify Azure regions when wiring real retention |
+| GAP-S-05 Tools token field | **Done** | `9b36217` | — |
+| GAP-S-06 password reset | **Done** (UI + Supabase calls) | `2304816` | Configure SMTP/template |
+| GAP-S-07 headers/CSP | **Done** | `c685dc6` | Smoke-test a voice call after deploy |
+| GAP-S-08 generic 500 + CORS | **Done** | `3ba3a0d` | Set `ALLOWED_ORIGIN` |
+| GAP-B-02/03/04, GAP-F-02/03/04 | **Open, blocked** on the migration being applied | — | See NEXT_IMPLEMENTATION_PROMPT |
+| GAP-B-05 previews spend realtime sessions | **Done** | `ee31e74`, `b8032da` | — |
+| GAP-D-01 prod vulnerabilities | **Done** (0 high/critical) | `ef21bfe` | — |
+| GAP-D-02 vitest major | **Open**: vitest 5 needs Vite ≥ 6 | — | Upgrade Vite + plugin-react-swc first |
+| GAP-F-05 dates | **Done** (Home, Routing) | `c3daec3` | CallReview "yesterday" stays until real calls |
+| GAP-F-06 /login redirect | **Done** | `5415e51` | — |
+| GAP-F-07 bell / cost widget | **Done** (bell → alerts; cost labelled demo) | `dd38645` | Real cost needs usage data |
+| GAP-F-08 router flags | **Done** | `581d6c6` | — |
+| GAP-F-09 lint warnings | **Done** (0 warnings) | refactor commit after `cf6594f` | — |
+| GAP-F-10 404 logging | **Done** | `7237f29` | — |
+| GAP-F-11 function error bodies | **Done** | `9508ffb` | — |
+| GAP-F-13 logo | **Done** (earlier) | `e4bb86e`… | Vector master for print |
+| GAP-F-14 phone overflow | **Done** | `c38928a`, `f53b2bf` | — |
+| GAP-F-15 Alerts nav | **Done** | `dd38645` | — |
+| GAP-T-01 E2E tests | **Part 1 done** (public surface, 20 checks) | `cf6594f` | Signed-in screen tests need a CI test account |
+| GAP-T-02 CI | **Done** | `9fcba7d` + later jobs | Set `VITE_SUPABASE_*` repository variables |
+| GAP-O-01 monitoring/backups | **Open** | — | Needs a Sentry DSN and a backup decision |
+| GAP-O-02 deploy target | **Open** | — | User decision: SWA, Vercel or Docker |
+
+Original register follows.
+
 Priority: **P0** must fix before any deployment · **P1** must fix before a client uses it · **P2** before wider rollout · **P3** improvement.
 
 Status words follow EXECUTIVE_SUMMARY.md. "Verification required" states what the next session must show as evidence before closing the item.

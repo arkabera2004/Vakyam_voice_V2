@@ -1,5 +1,7 @@
 # Vakyam Voice V2 — Test Execution Report
 
+> **Implementation session, 2026-11-16 (after the audit).** Results for the remediation commits `9fcba7d`…HEAD are in section 7 at the end. Sections 1–6 are the audit baseline and are kept as written.
+
 All commands run on 2026-11-16 from `~/Desktop/Wayam AI/vakyam` at HEAD `5e56660` (plus untracked `docs/`). Nothing was piped through `grep` to hide failures; where output is trimmed, the pass/fail line is reproduced verbatim.
 
 ## 1. Quality gates
@@ -88,3 +90,46 @@ Dev server: reused the already-running Vite instance at `http://localhost:5181` 
 | Azure Speech preview path | Depends on function secrets; not exercised to avoid minting sessions |
 | Supabase dashboard inspection via connector (tables, RLS, advisors, function list, logs) | Connector returned `You do not have permission to perform this action` for project `eshtcyzraxojwkzqgqld` |
 | GitHub Actions deploy run | No run triggered; workflow only reviewed |
+
+## 7. Implementation session results (2026-11-16, commits 9fcba7d → HEAD)
+
+### 7.1 Quality gates at HEAD
+
+| Command | Result |
+|---|---|
+| `npx tsc --noEmit -p tsconfig.app.json` | PASS |
+| `npm run lint` | PASS, **0 errors, 0 warnings** (was 5 warnings) |
+| `npm test` (vitest 2.1.9) | PASS: 11 files, **26 tests**, 0 skipped (new: `limits.test.ts` ×4, `useOrg.test.ts` ×2, `clock.test.ts` ×2) |
+| `npm run build` | PASS |
+| `npm run test:e2e` (Playwright 1.65.1, chromium) | PASS: **20 passed** (10 tests × desktop + iPhone 13), 17.7 s, twice on fresh servers |
+| `npx deno check supabase/functions/realtime-token/index.ts` | PASS |
+| `npm audit --omit=dev --audit-level=high` | PASS, exit 0: **0 high / 0 critical**, 5 moderate (build-time) |
+| `npm audit` (all) | 17 (14 moderate, 1 high, 2 critical), all in dev tooling: vitest 5 requires Vite 6+, project is on Vite 5 (GAP-D-02 open) |
+| `bash scripts/check-auth-settings.sh` | **FAIL as intended**: `disable_signup=false` on the live project. Flip it in the dashboard and re-run |
+| SQL syntax (libpg_query via pglast) | PASS for the 3 new migrations and the pgTAP file (5 + 36 + 17 + 28 statements) |
+| `npx supabase test db` | **BLOCKED**: no Docker / local stack on this machine |
+
+### 7.2 Browser verification (fresh dev server, signed-in demo session carried across ports)
+
+| Check | Result |
+|---|---|
+| Sidebar shows the real profile name ("demo") from `profiles`; `org_members` 404s until the migration is applied and degrades to "No organisation yet" | PASS, 0 console errors |
+| `/login` while signed in → `/console` | PASS |
+| `/reset` email step; `/reset#type=recovery` fresh load → "Set new password" | PASS (also in Playwright) |
+| Home date/greeting live ("Monday, 16 November, 20:45 IST", "Good evening"); Routing clock "now 20:46" | PASS |
+| Compliance shows "Target policy" and "Demo data" pills instead of compliance claims | PASS |
+| Tools Configure modal: no credential field, "Demo adapter" hint | PASS |
+| Alerts active in sidebar; header bell links to `/console/alerts` | PASS |
+| 390 px: `/console` and `/console/qa` document width equals viewport (was 397 and 558) | PASS |
+| React Router future-flag warnings | gone |
+
+### 7.3 Not run and why
+
+| Item | Reason |
+|---|---|
+| Applying migrations `20261116140000`, `20261116150000`, `20261116150100` | No `supabase login`, no Docker, connector lacks project permission. Apply with `npx supabase link --project-ref eshtcyzraxojwkzqgqld && npx supabase db push`, then `npx supabase gen types typescript --linked > src/integrations/supabase/types.ts` |
+| pgTAP RLS tests | Same; run `npx supabase start && npx supabase test db` |
+| Deploying `realtime-token` with the rate limit, speech-only path, generic errors and `ALLOWED_ORIGIN` | `npx supabase functions deploy realtime-token`; set `VOICE_SESSIONS_PER_HOUR` and `ALLOWED_ORIGIN` secrets. The 429 curl loop needs the deployed function and a user JWT |
+| CSP smoke test of a real voice call | Needs a deploy with the new headers |
+| Password-reset email delivery | Needs SMTP / template in the Supabase dashboard; no email was sent |
+| Screens reading from the database (GAP-S-03 items 6–9, 13) | Blocked on the migration being applied; not started so as not to ship unverifiable code |
