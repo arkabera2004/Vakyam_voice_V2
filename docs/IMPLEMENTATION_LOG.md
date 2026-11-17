@@ -72,3 +72,21 @@ One entry per atomic commit or verified fact. States: IMPLEMENTED (code in repo)
 - Standing blocker discovered: Docker Desktop's backend processes have been running since 28 Oct without ever answering `docker info` — a hung daemon, not a slow one. No pgTAP suite (4 files, 56 assertions total across `rls`, `voice_platform`, `invitations`, `retention`) has ever actually executed; all are SQL-parse-verified only.
 - Still blocked as before: Supabase access token (no `db push`/`functions deploy`/`gen types --linked`), public signup still enabled on the live project, no SMTP configured, no consent wording supplied.
 - Next smallest task: Phase 6 — wire `useVoiceAgent.ts`/`Index.tsx` to create and advance a real `calls` row per session (needs an org/agent lookup the voice page does not currently do).
+
+## 2026-11-17/18 — Session 3: browser call persistence and agent-driven realtime-token
+
+| Date | Phase | SHA | Message | Changed | Tests | Result | Push |
+|---|---|---|---|---|---|---|---|
+| 2026-11-17 | 1 | — | Docker recovery attempted: `docker desktop restart`/`start` both run; restart explicitly failed (`context deadline exceeded` stopping two hung backend processes alive since 28 Oct) | — | — | BLOCKED, documented | n/a |
+| 2026-11-18 | 2 | `7ac2f98` | feat(db): start_call() resolves org, agent and permission server-side | `20261117140000_start_call.sql`, `calls.test.sql` | SQL parse only; pgTAP NOT executed (Docker) | 9 assertions written | `git ls-remote v2` = `7ac2f98` |
+| 2026-11-18 | 2 | `27d4f3d` | feat(voice): callSession module for call persistence, with tests | `src/lib/callSession.ts(.test)` | `vitest run` | 66/66 | `git ls-remote v2` = `27d4f3d` |
+| 2026-11-18 | 2 | `2a37ebd` | feat(voice): persist the real browser call lifecycle to the database | `useVoiceAgent.ts` | `vitest run`, `tsc`, `eslint`, `npm run build` | 66/66 | `git ls-remote v2` = `2a37ebd` |
+| 2026-11-18 | 2 | `b1f57f4` | feat(functions): call-sweep as the safety net for abandoned calls | `supabase/functions/call-sweep/index.ts` | `deno check`, `vitest run` | 66/66 | `git ls-remote v2` = `b1f57f4` |
+| 2026-11-18 | 3 | `f9c902e` | feat(voice): agentConfig merges a published agent_version over the seed | `realtime-token/agentConfig.ts(.test)` | `vitest run`, `deno check` | 73/73 | `git ls-remote v2` = `f9c902e` |
+| 2026-11-18 | 3 | `a040173` | feat(voice): realtime-token uses the call's own agent configuration | `realtime-token/{index,limits}.ts(.test)`, `useVoiceAgent.ts` | `vitest run`, `deno check`, `tsc`, `eslint`, `npm run build` | 73/73 | `git ls-remote v2` = `a040173` |
+
+### Session 3 summary
+- Baseline: 21 test files / 73 unit tests pass, tsc clean (app+node), eslint 0/0, production build passes, every Edge Function Deno-checks clean.
+- Docker: exhausted every sanctioned remediation path (`open -a Docker`, `osascript quit app`, `docker desktop restart`, `docker desktop start`); the official restart command itself reports failure to stop the hung backend. This needs the user to force-quit Docker Desktop (Activity Monitor) or restart the machine — force-killing processes directly is outside what this session may do.
+- Phase 2 (browser call persistence) and Phase 3 (agent-driven realtime-token) are code-complete and unit-tested; neither is deployed or verified against the live Supabase project or real Azure credentials.
+- Next task: Phase 4 — recording upload, transcript persistence from the data channel, and consent gating before a call may record.

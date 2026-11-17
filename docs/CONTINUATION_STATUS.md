@@ -109,11 +109,25 @@ Recovery audit of the repository at the start of the 2026-11-17 continuation ses
 
 Baseline after this session: **19 test files, 58 unit tests, tsc clean, eslint 0/0, production build passes.** Docker's daemon has been unresponsive since before this session started (`com.docker.backend` processes alive since 28 Oct, never answering `docker info`) — pgTAP has still never been executed, only written and hand-verified by reading. This is now the standing local-verification blocker; re-check with `docker info` once Docker Desktop is restarted or reinstalled.
 
+## Session 3 additions (2026-11-17/18, commits `2a37ebd` → `a040173`)
+
+Docker Desktop investigation: its own CLI (`docker desktop restart`) was run and explicitly failed — `stopping Docker Desktop: processes still running: ...: context deadline exceeded`. Two backend processes (PIDs alive since 28 Oct) do not respond to graceful stop. Every sanctioned remediation (`open -a Docker`, `osascript quit`, `docker desktop restart`, `docker desktop start`) was tried; none recovers it, and force-killing the hung processes is outside what this session may do. **Local pgTAP execution remains BLOCKED on a manual Docker Desktop force-quit or machine restart.**
+
+| Commit | Change |
+|---|---|
+| `2a37ebd` (3 commits) | `start_call()` RPC resolves org/agent/permission server-side; `callSession.ts` client wrapper; `useVoiceAgent.ts` persists the full lifecycle (created→initializing→active→interrupted/completed/failed/cancelled) via three refs in `teardown()` |
+| `b1f57f4` | `call-sweep` Edge Function invokes `abandon_stale_calls()` on a schedule — the server-side safety net for a browser that never finalises (tab closed, network lost) |
+| `a040173` (2 commits) | `agentConfig.ts` merges a call's `agent_versions` row over the `prompt.ts` seed; `realtime-token` now requires `callId`, verifies the call belongs to the caller and is still open, and builds the session from the resolved config instead of hardcoded constants |
+
+Baseline after this session: **21 test files, 73 unit tests, tsc clean (app+node), eslint 0/0, production build passes, every Edge Function Deno-checks clean.**
+
+Known residual item: the Agent Studio console screen still writes to `localStorage`, not `agent_versions` — the API-level plumbing (`agent_versions` → `realtime-token`) is real and tested, but nothing in the UI lets an admin publish a new prompt/voice yet. That is Phase 10/12 frontend-integration scope, not done this session.
+
 ## Exact next implementation task
 
-1. Once Docker (or Supabase CLI access) is available: `supabase db reset` + `supabase test db` to execute all four pgTAP files (`rls`, `voice_platform`, `invitations`, `retention`) for real; fix anything they reveal.
-2. Phase 6: wire `useVoiceAgent.ts` to create/advance a real `calls` row (GAP-C-06) — needs an org/agent lookup the voice page does not do today.
-3. Phase 5: make `realtime-token` read the caller's live `agent_versions` row instead of `prompt.ts` constants (GAP-C-05).
+1. Once Docker (or Supabase CLI access) is available: `supabase db reset` + `supabase test db` to execute all five pgTAP files (`rls`, `voice_platform`, `invitations`, `retention`, `calls`) for real; fix anything they reveal.
+2. Phase 4: recording upload (MediaRecorder → private bucket), transcript persistence from the realtime data channel's text events, and consent gating before a call is allowed to record.
+3. Wire the Agent Studio screen to read/write `agents`/`agent_versions` for real, closing the loop Phase 3 opened.
 
 ## External blockers (need the product owner)
 
