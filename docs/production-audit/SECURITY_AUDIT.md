@@ -58,4 +58,23 @@ No credential values appear in this document.
 - **High**: SEC-02 unlimited Azure session minting per user; SEC-03 unverifiable compliance claims in UI; SEC-04 audit log is client-side and resettable; SEC-05 `.env` tracked with `!.env` ignore rule while Azure secret names are being added locally.
 - **Medium**: SEC-06 no password reset; SEC-07 no CSP / headers on nginx path; SEC-08 Tools token field discards secrets while claiming storage.
 - **Low**: SEC-09 config error text in 500 body; SEC-10 CORS `*`; SEC-11 `/login` reachable while signed in; SEC-12 session in localStorage.
+
+## 7. 2026-11-18 addendum — session 3 security review
+
+Scope: static review of every migration and Edge Function added since the findings above (roles, invitations, calls, retention, transcripts, evaluations, CRM). Most SEC-01 through SEC-06 above are now resolved by that work (roles, tenant isolation, rate limiting, consent/retention fail-safes); this addendum covers only what changed.
+
+### RLS coverage: complete
+Every one of the 39 tables across all migrations has Row Level Security enabled — verified by extracting every `CREATE TABLE public.X` and every `ALTER TABLE public.X ENABLE ROW LEVEL SECURITY` (including the three dynamic `FOREACH`/`EXECUTE format(...)` loops in `20261116150000` and `20261117100000`) and confirming the two sets match exactly. No table was created without a corresponding RLS policy.
+
+### SECURITY DEFINER functions: all gate on the caller's role
+Every function running as `SECURITY DEFINER` (`start_call`, `advance_call`, `append_transcript_segment`, `submit_evaluation`, `add_evaluation_review`, `set_legal_hold`, `set_member_status`, `enqueue_crm_sync`, `log_audit`, the trigger functions) was individually re-read to confirm it checks `can_manage_org`/`can_edit_org`/`can_review_org` or an explicit row-ownership match (`started_by = auth.uid()`) before acting, and that the tenant check is parameterised by the row's own `org_id` rather than a caller-supplied value that could name a different organisation. No privilege-escalation path found.
+
+### Finding: query-string injection via unvalidated UUIDs — fixed, commit `11ae57b`
+`realtime-token`'s `callId` and `crm-test-connection`'s `integrationId` were taken from the request body and interpolated directly into a PostgREST URL (`?id=eq.<value>`) without validating they were well-formed UUIDs first. Since that query string is itself a filter expression, a crafted value containing `&` or `,` could inject additional filter operators. RLS still bounds which rows are reachable underneath, so the impact was contained, but the input should never have reached that URL unvalidated. Added `isUuid()` in `_shared/http.ts`, applied at both sites, and de-duplicated `invite-user/validate.ts`'s equivalent regex against it.
+
+### Finding: ambiguous-column bugs — fixed, commit `bbeb511` (see `docs/IMPLEMENTATION_LOG.md`)
+Not a security vulnerability, but a correctness/availability risk worth recording here: PL/pgSQL's default `variable_conflict = error` means a bare identifier that matches both a function parameter and a table column raises `column reference "x" is ambiguous` at execution time, not at migration time, so SQL parsing (the only check available without Docker) could not catch it. Found in `append_transcript_segment` (already shipped unexecuted, fixed in place since nothing is deployed) and caught before shipping in `submit_evaluation`. Every function across every migration was re-audited line by line for the same pattern; none remain. New functions (`enqueue_crm_sync`) adopt parameter names that never exactly match a column name, as a second layer of defence beyond aliasing.
+
+### Not newly reviewed this pass
+Dependency audit (`npm audit`), CSP/header configuration, and the `.env` tracking question are unchanged from the original audit above; re-verify them before any deployment rather than assuming they still hold.
 - **Informational**: no auth bypass present; RLS correct on the one table; Azure keys never reach the browser.

@@ -136,12 +136,21 @@ Known residual item: the Agent Studio console screen still writes to `localStora
 
 Baseline after this addition: **21 test files, 76 unit tests, tsc clean, eslint 0/0, build passes.**
 
+### Session 3, continued per explicit instruction to defer Docker and keep going (commits `bbeb511` → `11ae57b`)
+
+- **Evaluation workflow** (`submit_evaluation()`, `add_evaluation_review()`): a qa_analyst scores an eligible call against an active template; the weighted overall score is computed server-side, never trusted from the client; a human review/override is a separate row that never touches the original result. 15 pgTAP assertions.
+- **A real bug was caught, not just tests written for.** While writing `submit_evaluation()`, recognised the same class of bug already shipped unexecuted in the prior commit's `append_transcript_segment()`: PL/pgSQL's `variable_conflict = error` default makes a bare identifier matching both a function parameter and a scanned table's column raise `column reference "x" is ambiguous` **at execution time** — invisible to SQL parsing, the only check available without Docker. Fixed three instances, then re-audited every function in every migration line by line; none remain. Full detail in `docs/production-audit/SECURITY_AUDIT.md` §7.
+- **CRM connector framework** (`enqueue_crm_sync()`, `crm-test-connection`, `crm-sync-worker`): job creation with idempotency, a user-triggered connection test, and a scheduled worker with capped exponential backoff. Only `provider_key='mock'` is a real implementation; everything else gets an honest "not implemented" rather than a fabricated result, since no vendor has been selected. 9 pgTAP assertions.
+- **Security review**: confirmed all 39 tables have RLS enabled and every `SECURITY DEFINER` function checks the caller's role against the row's own `org_id` before acting. Found and fixed a real issue: `realtime-token` and `crm-test-connection` interpolated caller-supplied IDs into PostgREST URLs (themselves filter expressions) without validating UUID shape first — a query-string injection risk, contained by RLS but not defended at the input boundary. Added a shared `isUuid()` validator.
+
+Baseline after this session: **22 test files, 78 unit tests, tsc clean, eslint 0/0, build passes.** Nine pgTAP files now exist (`rls`, `voice_platform`, `invitations`, `retention`, `calls`, `transcripts`, `evaluations`, `crm_sync`), none executed — Docker remains the standing blocker, deferred per explicit instruction.
+
 ## Exact next implementation task
 
-1. Once Docker (or Supabase CLI access) is available: `supabase db reset` + `supabase test db` to execute all six pgTAP files (`rls`, `voice_platform`, `invitations`, `retention`, `calls`, `transcripts`) for real; fix anything they reveal.
+1. Once Docker (or Supabase CLI access) is available: `supabase db reset` + `supabase test db` to execute all pgTAP files for real; fix anything they reveal.
 2. Design (with the product owner) how explicit verbal consent is captured in a voice-only interface, then wire it.
 3. Recording upload: `MediaRecorder` on the browser's local/remote audio, private bucket upload, `recordings` metadata row, gated by `calls.recording_allowed`.
-4. Wire the Agent Studio screen to read/write `agents`/`agent_versions` for real, closing the loop Phase 3 opened.
+4. Wire the Agent Studio screen to read/write `agents`/`agent_versions` for real, closing the loop Phase 3 opened. (QAScorecards.tsx and Analytics.tsx were deliberately not attempted this session: both are built around concepts — per-prompt-version rubric heatmaps, pre-assignment of a reviewer before any review exists, cost-per-model breakdowns — that don't map cleanly onto the existing schema, and wiring them would mean inventing product design rather than plumbing existing data.)
 
 ## External blockers (need the product owner)
 

@@ -99,3 +99,18 @@ One entry per atomic commit or verified fact. States: IMPLEMENTED (code in repo)
 - Phase 2 (browser call persistence), Phase 3 (agent-driven realtime-token) and the server-side half of Phase 4 (consent resolution, agent-turn transcript persistence) are code-complete and unit-tested; none is deployed or verified against the live Supabase project or real Azure credentials.
 - Explicitly not attempted, with reasons recorded in `docs/CONTINUATION_STATUS.md`: audio recording upload, the member's (caller's) transcript turns, and how a member's verbal consent is captured — the first two need a real browser/live Azure session this environment cannot provide, the third needs a product decision.
 - Next task: a product decision on consent capture, then recording upload once that and a verifiable browser/Azure path exist; independently, Phase 6 (evaluation workflow) or wiring Agent Studio to real data can proceed without either.
+
+## 2026-11-18 — Session 3 continued, on "do the Docker work later, complete the other works"
+
+| Date | Phase | SHA | Message | Changed | Tests | Result | Push |
+|---|---|---|---|---|---|---|---|
+| 2026-11-18 | — | `bbeb511` (2 commits) | fix: ambiguous-column bug in append_transcript_segment(); feat: evaluation workflow | `20261118100000_transcript_segments.sql` (fix), `20261118110000_evaluation_workflow.sql`, `evaluations.test.sql` | `vitest run`; SQL parse only, pgTAP NOT executed | 76/76; 15 new assertions | `git ls-remote v2` = `bbeb511` |
+| 2026-11-18 | 8 | `33dc52c` (2 commits) | feat: CRM connector framework -- enqueue_crm_sync, test connection, sync worker | `20261118120000_crm_sync_queue.sql`, `crm_sync.test.sql`, `crm-test-connection/index.ts`, `crm-sync-worker/index.ts` | `vitest run`, `deno check` | 76/76; 9 new assertions | `git ls-remote v2` = `33dc52c` |
+
+### Notable: a real bug was caught, not just written tests for
+
+While writing `submit_evaluation()`, I recognised the same bug class I had just shipped unexecuted in `append_transcript_segment()` (commit `ddad3bf`): PL/pgSQL's `variable_conflict = error` default means an unqualified identifier that matches **both** a function parameter and a table column being scanned raises `column reference "x" is ambiguous` **at execution time**, not at migration time. SQL parsing — the only verification available without Docker — cannot catch this. Found and fixed three instances (`append_transcript_segment`'s `call_id`, `submit_evaluation`'s `template_id` and a nested `transcripts` subquery), then re-audited every other function in the repository line by line to confirm no further instances exist, and adopted a naming convention for new functions (parameter names that never exactly match a column name) to prevent recurrence. See `docs/production-audit/SECURITY_AUDIT.md` update and commit `bbeb511` for detail.
+
+### Scope note
+
+Per the user's explicit instruction, Docker/local-pgTAP-execution recovery was deliberately deferred this session; all five new pgTAP files (`calls`, `transcripts`, `evaluations`, `crm_sync`, plus the extended `calls` consent assertions) remain SQL-parse-verified and line-by-line reviewed, but never executed. This is the standing verification gap across the whole session, not specific to any one phase.
