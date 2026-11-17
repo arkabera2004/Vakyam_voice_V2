@@ -92,16 +92,34 @@ Recovery audit of the repository at the start of the 2026-11-17 continuation ses
 - Azure OpenAI Realtime + Azure Speech credentials exist as local environment values (names only verified; values never printed). Not deployable without Supabase secrets access.
 - Live voice works today only through the older deployed function.
 
+## Session 2 additions (2026-11-17, commits `9d1fe0c` → `ed50113`)
+
+| Commit | Change |
+|---|---|
+| `9d1fe0c` | `src/domain/consent.ts`/`retention.ts` committed (were untracked, complete, tested) |
+| `104ae71` | Fixed `useOrg`/`types.ts` three-role drift against the five-role matrix |
+| `4305291` | `supabase/functions/_shared/{auth,permissions,http}.ts` — caller authentication, role tiers, response helpers |
+| `78628fd` | Migration: membership `status`, invitation `expires_at`/role guard/acceptance trigger, `set_member_status()`. 14 pgTAP assertions |
+| `d51add3` | `invite-user` Edge Function (invite / revoke) |
+| `1f52990` | `/accept` page to finish invitation setup |
+| `091f6aa` | Migration: `legal_hold` on recordings/transcripts, `set_legal_hold()`, `retention_runs`. 9 pgTAP assertions |
+| `f450800` | `retention-sweep` Edge Function; made `src/domain/retention.ts` transcript-aware (single source, mirrored) |
+| `ffa9c73` | Moved `canAssignRole` to the domain module (was only in its Edge Function mirror) |
+| `ed50113` | Real `/console/team` screen: invite, revoke, deactivate/reactivate, backed by the tables above |
+
+Baseline after this session: **19 test files, 58 unit tests, tsc clean, eslint 0/0, production build passes.** Docker's daemon has been unresponsive since before this session started (`com.docker.backend` processes alive since 28 Oct, never answering `docker info`) — pgTAP has still never been executed, only written and hand-verified by reading. This is now the standing local-verification blocker; re-check with `docker info` once Docker Desktop is restarted or reinstalled.
+
 ## Exact next implementation task
 
-1. Bring up the local Supabase stack (Docker) and run `supabase db reset` + `supabase test db` to execute both pgTAP files for real.
-2. Fix anything the migrations or tests reveal, commit.
-3. Phase 2: `invite-user` Edge Function with shared auth helper and tests.
+1. Once Docker (or Supabase CLI access) is available: `supabase db reset` + `supabase test db` to execute all four pgTAP files (`rls`, `voice_platform`, `invitations`, `retention`) for real; fix anything they reveal.
+2. Phase 6: wire `useVoiceAgent.ts` to create/advance a real `calls` row (GAP-C-06) — needs an org/agent lookup the voice page does not do today.
+3. Phase 5: make `realtime-token` read the caller's live `agent_versions` row instead of `prompt.ts` constants (GAP-C-05).
 
 ## External blockers (need the product owner)
 
 | Blocker | Why | How to unblock |
 |---|---|---|
+| Docker daemon unresponsive | Local pgTAP execution, `supabase start` | Restart or reinstall Docker Desktop; `docker info` should return a server version |
 | Supabase access token | `db push`, `functions deploy`, `secrets set`, `gen types --linked` all need it | Run `npx supabase login` in this repo's shell, or export `SUPABASE_ACCESS_TOKEN` in the environment (never paste it in chat) |
 | Public signup switch | Invitation-only is mandatory; the dashboard switch is the only control | Supabase dashboard → Authentication → Sign In / Providers → turn off "Allow new users to sign up" |
 | SMTP / custom sender | Invitation and reset emails need a deliverable sender | Configure SMTP in Supabase Auth settings |

@@ -58,3 +58,17 @@ One entry per atomic commit or verified fact. States: IMPLEMENTED (code in repo)
 |---|---|---|---|---|---|---|---|
 | 2026-11-17 | 0 | `9d1fe0c` | feat(domain): recording consent gate and retention planning | 4 files under `src/domain/` | `vitest run` | 40/40 | `git ls-remote v2` = `9d1fe0c` |
 | 2026-11-17 | 0 | `104ae71` | fix(roles): make the SPA use the five-role permission matrix | `useOrg.ts(.test)`, `types.ts`, `ConsoleShell.tsx`, `MobileSupervisor.tsx` | tsc, eslint, `vitest run` | 40/40 | `git ls-remote v2` = `104ae71` |
+| 2026-11-17 | 2 | `4305291` | feat(functions): shared caller authentication, permissions and HTTP helpers | `supabase/functions/_shared/{auth,permissions,http}.ts(.test)` | `vitest run`, `deno check` | 53/53 | `git ls-remote v2` = `4305291` |
+| 2026-11-17 | 2 | `78628fd` | feat(db): invitation lifecycle, membership status and acceptance trigger | `20261117120000_invitation_lifecycle.sql`, `invitations.test.sql` | SQL parse only; pgTAP NOT executed (Docker daemon unresponsive) | 14 assertions written | `git ls-remote v2` = `78628fd` |
+| 2026-11-17 | 2 | `d51add3` | feat(auth): invite-user Edge Function with validation and revocation | `supabase/functions/invite-user/*` | `vitest run`, `deno check` | 57/57 | `git ls-remote v2` = `d51add3` |
+| 2026-11-17 | 2 | `1f52990` | feat(auth): invitation acceptance page at /accept | `src/pages/AcceptInvitation.tsx`, `App.tsx` | tsc, eslint, `vitest run`, `npm run build` | 57/57 | `git ls-remote v2` = `1f52990` |
+| 2026-11-17 | 7 | `091f6aa` | feat(db): legal hold on recordings and transcripts, retention run records | `20261117130000_retention_legal_hold.sql`, `retention.test.sql` | SQL parse only; pgTAP NOT executed | 9 assertions written | `git ls-remote v2` = `091f6aa` |
+| 2026-11-17 | 7 | `f450800` | feat(functions): retention-sweep applies recording and transcript policy | `retention-sweep/index.ts`, `_shared/retention.ts(.test)`, `domain/retention.ts(.test)` | `vitest run`, `deno check` | 57/57 | `git ls-remote v2` = `f450800` |
+| 2026-11-17 | 2 | `ffa9c73` | fix(roles): make canAssignRole live in the domain, not only its mirror | `domain/roles.ts(.test)`, `_shared/permissions.test.ts` | `vitest run` | 58/58 | `git ls-remote v2` = `ffa9c73` |
+| 2026-11-17 | 2/12 | `ed50113` | feat(console): real Team screen for invitations and membership | `pages/console/Team.tsx`, `nav.ts`, `ConsoleShell.tsx`, `App.tsx`, `types.ts` | tsc, eslint, `vitest run`, `npm run build` | 58/58 | `git ls-remote v2` = `ed50113` |
+
+### Session 2 end-of-session summary (see `docs/CONTINUATION_STATUS.md` for full detail)
+- Baseline: 19 test files / 58 unit tests pass, tsc clean, eslint 0/0, production build passes.
+- Standing blocker discovered: Docker Desktop's backend processes have been running since 28 Oct without ever answering `docker info` — a hung daemon, not a slow one. No pgTAP suite (4 files, 56 assertions total across `rls`, `voice_platform`, `invitations`, `retention`) has ever actually executed; all are SQL-parse-verified only.
+- Still blocked as before: Supabase access token (no `db push`/`functions deploy`/`gen types --linked`), public signup still enabled on the live project, no SMTP configured, no consent wording supplied.
+- Next smallest task: Phase 6 — wire `useVoiceAgent.ts`/`Index.tsx` to create and advance a real `calls` row per session (needs an org/agent lookup the voice page does not currently do).
