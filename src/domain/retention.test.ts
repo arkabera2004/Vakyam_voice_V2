@@ -32,7 +32,13 @@ describe("retention planning", () => {
     expect(plan.skipped).toEqual([
       { id: "gone", reason: "already deleted" },
       { id: "held", reason: "legal hold" },
-      { id: "stuck", reason: "upload never completed; needs review" },
+      { id: "stuck", reason: "upload or processing never completed; needs review" },
     ]);
+  });
+
+  it("also treats a partial transcript as incomplete, since 'pending' alone does not cover it", () => {
+    const transcriptPolicy: RetentionPolicy = { target: "transcript", retainDays: 365, deletionEnabled: false };
+    const plan = planRetention(transcriptPolicy, [{ id: "t1", createdAt: daysAgo(400), status: "partial" }], now);
+    expect(plan.skipped).toEqual([{ id: "t1", reason: "upload or processing never completed; needs review" }]);
   });
 });
