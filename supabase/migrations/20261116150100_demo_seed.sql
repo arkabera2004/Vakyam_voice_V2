@@ -25,19 +25,19 @@ VALUES
 
 INSERT INTO public.calls (org_id, agent_id, number, caller_name, caller_tier, language, hindi_share, step, step_hot, sentiment, status, started_at)
 VALUES
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4812, 'Rohan Mehta', 'Platinum', 'Hindi lean', 35, 'handoff, waiting approval', true, 'Frustrated', 'live', now() - interval '6 minutes 48 seconds'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4815, 'Meenal Joshi', 'Silver', 'Hindi', 50, 'warm transfer to Asha', true, 'Frustrated', 'live', now() - interval '9 minutes 2 seconds'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4821, 'Priya Sharma', 'Gold', 'prefers Hindi', 80, 'check_availability, Lonavala 1BR', false, 'Positive', 'live', now() - interval '4 minutes 12 seconds'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4822, 'Anita Iyer', 'Gold', 'mixes both', 55, 'place_hold, Goa 2BR', false, 'Neutral', 'live', now() - interval '3 minutes 5 seconds'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4823, 'Neha Kulkarni', 'Silver', 'Hindi', 90, 'lookup_caller', false, 'Positive', 'live', now() - interval '1 minute 22 seconds'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4824, 'Imran Qureshi', 'Gold', 'English lean', 20, 'create_case, billing query', false, 'Neutral', 'live', now() - interval '7 minutes 30 seconds'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4825, 'Sunil Deshmukh', 'Silver', 'Hindi', 60, 'check_availability, Mussoorie', false, 'Positive', 'live', now() - interval '2 minutes 41 seconds'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4826, 'Kavya Nair', 'Platinum', 'English', 30, 'answering cancellation policy', false, 'Neutral', 'live', now() - interval '5 minutes 17 seconds'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4827, 'Arjun Bhatt', 'Gold', 'Hindi', 75, 'lookup_caller', false, 'Neutral', 'live', now() - interval '48 seconds'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4828, 'Farhan Sheikh', 'Gold', 'English lean', 40, 'place_hold, Kumbhalgarh', false, 'Positive', 'live', now() - interval '3 minutes 36 seconds'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4829, 'Lata Menon', 'Silver', 'Hindi', 85, 'check_availability, Goa', false, 'Neutral', 'live', now() - interval '2 minutes 9 seconds'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4830, 'Vikram Rao', 'Gold', 'mixes both', 45, 'place_hold, Lonavala', false, 'Positive', 'live', now() - interval '4 minutes 55 seconds'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4790, 'Anita Iyer', 'Gold', 'mixes both', 38, 'resolved', false, 'Positive', 'ended', now() - interval '1 day');
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4812, 'Rohan Mehta', 'Platinum', 'Hindi lean', 35, 'handoff, waiting approval', true, 'Frustrated', 'active', now() - interval '6 minutes 48 seconds'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4815, 'Meenal Joshi', 'Silver', 'Hindi', 50, 'warm transfer to Asha', true, 'Frustrated', 'active', now() - interval '9 minutes 2 seconds'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4821, 'Priya Sharma', 'Gold', 'prefers Hindi', 80, 'check_availability, Lonavala 1BR', false, 'Positive', 'active', now() - interval '4 minutes 12 seconds'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4822, 'Anita Iyer', 'Gold', 'mixes both', 55, 'place_hold, Goa 2BR', false, 'Neutral', 'active', now() - interval '3 minutes 5 seconds'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4823, 'Neha Kulkarni', 'Silver', 'Hindi', 90, 'lookup_caller', false, 'Positive', 'active', now() - interval '1 minute 22 seconds'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4824, 'Imran Qureshi', 'Gold', 'English lean', 20, 'create_case, billing query', false, 'Neutral', 'active', now() - interval '7 minutes 30 seconds'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4825, 'Sunil Deshmukh', 'Silver', 'Hindi', 60, 'check_availability, Mussoorie', false, 'Positive', 'active', now() - interval '2 minutes 41 seconds'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4826, 'Kavya Nair', 'Platinum', 'English', 30, 'answering cancellation policy', false, 'Neutral', 'active', now() - interval '5 minutes 17 seconds'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4827, 'Arjun Bhatt', 'Gold', 'Hindi', 75, 'lookup_caller', false, 'Neutral', 'active', now() - interval '48 seconds'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4828, 'Farhan Sheikh', 'Gold', 'English lean', 40, 'place_hold, Kumbhalgarh', false, 'Positive', 'active', now() - interval '3 minutes 36 seconds'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4829, 'Lata Menon', 'Silver', 'Hindi', 85, 'check_availability, Goa', false, 'Neutral', 'active', now() - interval '2 minutes 9 seconds'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4830, 'Vikram Rao', 'Gold', 'mixes both', 45, 'place_hold, Lonavala', false, 'Positive', 'active', now() - interval '4 minutes 55 seconds'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000010', 4790, 'Anita Iyer', 'Gold', 'mixes both', 38, 'resolved', false, 'Positive', 'completed', now() - interval '1 day');
 
 INSERT INTO public.transfers (org_id, call_id, state, to_name, summary)
 SELECT '00000000-0000-4000-8000-000000000001', id, 'ringing', 'Asha Nair', ARRAY[

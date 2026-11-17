@@ -14,7 +14,7 @@ CREATE TABLE public.organisations (
 CREATE TABLE public.org_members (
     org_id UUID NOT NULL REFERENCES public.organisations(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    role TEXT NOT NULL CHECK (role IN ('admin', 'supervisor', 'agent')),
+    role TEXT NOT NULL CHECK (role IN ('super_admin', 'org_admin', 'supervisor', 'agent', 'qa_analyst')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (org_id, user_id)
 );
@@ -28,23 +28,39 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT role FROM public.org_members WHERE org_id = org AND user_id = auth.uid();
 $$;
 
+-- Permission tiers. Mirror of src/domain/roles.ts; change both together.
+--   manage : organisation settings, members, policies, connectors
+--   edit   : agents, calls, campaigns, knowledge (operational changes)
+--   review : evaluations, recordings, audit exports
+CREATE OR REPLACE FUNCTION public.can_manage_org(org UUID)
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT public.org_role(org) IN ('super_admin', 'org_admin');
+$$;
+
 CREATE OR REPLACE FUNCTION public.can_edit_org(org UUID)
 RETURNS BOOLEAN
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT public.org_role(org) IN ('admin', 'supervisor');
+  SELECT public.org_role(org) IN ('super_admin', 'org_admin', 'supervisor');
+$$;
+
+CREATE OR REPLACE FUNCTION public.can_review_org(org UUID)
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT public.org_role(org) IN ('super_admin', 'org_admin', 'supervisor', 'qa_analyst');
 $$;
 
 ALTER TABLE public.organisations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "members see their organisation" ON public.organisations
   FOR SELECT USING (public.org_role(id) IS NOT NULL);
 CREATE POLICY "admins rename their organisation" ON public.organisations
-  FOR UPDATE USING (public.org_role(id) = 'admin');
+  FOR UPDATE USING (public.can_manage_org(id)) WITH CHECK (public.can_manage_org(id));
 
 ALTER TABLE public.org_members ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "members see who is in their organisation" ON public.org_members
   FOR SELECT USING (public.org_role(org_id) IS NOT NULL);
 CREATE POLICY "admins manage membership" ON public.org_members
-  FOR ALL USING (public.org_role(org_id) = 'admin') WITH CHECK (public.org_role(org_id) = 'admin');
+  FOR ALL USING (public.can_manage_org(org_id)) WITH CHECK (public.can_manage_org(org_id));
 
 -- ---------------------------------------------------------------- agents
 CREATE TABLE public.agents (
@@ -77,10 +93,14 @@ CREATE TABLE public.agent_versions (
 );
 
 -- ---------------------------------------------------------------- calls
+-- One voice session. `status` follows the state machine in
+-- src/domain/sessionState.ts; transitions are enforced by advance_call() below.
 CREATE TABLE public.calls (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     org_id UUID NOT NULL REFERENCES public.organisations(id) ON DELETE CASCADE,
     agent_id UUID REFERENCES public.agents(id) ON DELETE SET NULL,
+    agent_version_id UUID REFERENCES public.agent_versions(id) ON DELETE SET NULL,
+    channel TEXT NOT NULL DEFAULT 'browser' CHECK (channel IN ('browser', 'phone')),
     number INT,
     caller_name TEXT NOT NULL DEFAULT '',
     caller_tier TEXT,
@@ -89,13 +109,28 @@ CREATE TABLE public.calls (
     step TEXT,
     step_hot BOOLEAN NOT NULL DEFAULT false,
     sentiment TEXT CHECK (sentiment IN ('Positive', 'Neutral', 'Frustrated')),
-    status TEXT NOT NULL DEFAULT 'live' CHECK (status IN ('live', 'ended', 'transferred')),
+    status TEXT NOT NULL DEFAULT 'created'
+      CHECK (status IN ('created', 'initializing', 'active', 'interrupted', 'completed', 'failed', 'cancelled', 'abandoned')),
+    outcome TEXT,
+    failure_reason TEXT,
+    provider TEXT NOT NULL DEFAULT 'azure',
+    provider_model TEXT,
+    provider_voice TEXT,
+    provider_region TEXT,
+    consent_policy_id UUID,
+    consent_outcome TEXT CHECK (consent_outcome IN ('given', 'declined', 'not_asked', 'unknown')),
+    recording_allowed BOOLEAN NOT NULL DEFAULT false,
+    recording_skip_reason TEXT,
+    idempotency_key TEXT UNIQUE,
     taken_over_by UUID REFERENCES auth.users(id),
     started_by UUID REFERENCES auth.users(id),
     started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    ended_at TIMESTAMPTZ
+    last_event_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    ended_at TIMESTAMPTZ,
+    duration_ms INT CHECK (duration_ms >= 0)
 );
 CREATE INDEX calls_org_status_idx ON public.calls (org_id, status, started_at DESC);
+CREATE INDEX calls_org_started_idx ON public.calls (org_id, started_at DESC);
 
 CREATE TABLE public.call_turns (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
