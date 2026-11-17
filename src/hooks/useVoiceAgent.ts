@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { SpeechOutput } from "@/lib/speechOutput";
+import { advanceCallSession, createCallSession } from "@/lib/callSession";
+import type { SessionState } from "@/domain/sessionState";
 
 export type VoiceStatus = "idle" | "connecting" | "connected" | "speaking" | "listening" | "error";
 
@@ -86,8 +88,28 @@ export const useVoiceAgent = (): UseVoiceAgentReturn => {
   // tell it has been cancelled.
   const attemptRef = useRef(0);
 
+  // Tracked separately from `Call` because the database row exists before
+  // the WebRTC peer does (start_call() runs first, so an org/agent/
+  // permission problem is caught before ever asking for the microphone).
+  const callIdRef = useRef<string | null>(null);
+  const reachedActiveRef = useRef(false);
+  // Set by fail() so teardown() reports the real reason instead of guessing
+  // completed/cancelled from reachedActiveRef.
+  const outcomeRef = useRef<{ status: SessionState; reason?: string } | null>(null);
+
   const teardown = useCallback(() => {
     attemptRef.current += 1;
+    const id = callIdRef.current;
+    const wasActive = reachedActiveRef.current;
+    const outcome = outcomeRef.current;
+    callIdRef.current = null;
+    reachedActiveRef.current = false;
+    outcomeRef.current = null;
+    if (id) {
+      const finalStatus = outcome?.status ?? (wasActive ? "completed" : "cancelled");
+      void advanceCallSession(supabase, id, finalStatus, outcome?.reason);
+    }
+
     const call = callRef.current;
     callRef.current = null;
     if (!call) return;
@@ -113,6 +135,26 @@ export const useVoiceAgent = (): UseVoiceAgentReturn => {
     setStatus("connecting");
     setError(null);
 
+    // Resolves the caller's organisation, agent and permission to use it,
+    // and creates the database call record, before ever asking for the
+    // microphone. Keeps that business logic server-side in start_call()
+    // rather than duplicated here.
+    const created = await createCallSession(supabase);
+    if (attempt !== attemptRef.current) {
+      // Superseded while the call was being created: nothing here set
+      // callIdRef yet, so finalise this specific orphaned row directly
+      // rather than risk racing the next attempt's own tracking.
+      if (created.ok) void advanceCallSession(supabase, created.call.callId, "cancelled", "superseded by a new call attempt");
+      return;
+    }
+    if (created.ok === false) {
+      setError(created.error);
+      setStatus("error");
+      return;
+    }
+    callIdRef.current = created.call.callId;
+    void advanceCallSession(supabase, created.call.callId, "initializing");
+
     let microphone: MediaStream | null = null;
     let peer: RTCPeerConnection | null = null;
     // Created during the click, so the browser lets it play sound later.
@@ -126,8 +168,10 @@ export const useVoiceAgent = (): UseVoiceAgentReturn => {
       speech?.close();
       void context.close();
       if (attempt !== attemptRef.current) return;
+      const message = getErrorMessage(cause);
+      outcomeRef.current = { status: "failed", reason: message };
       teardown();
-      setError(getErrorMessage(cause));
+      setError(message);
       setStatus("error");
       setIsSpeaking(false);
     };
@@ -219,9 +263,20 @@ export const useVoiceAgent = (): UseVoiceAgentReturn => {
 
       connection.onconnectionstatechange = () => {
         if (attempt !== attemptRef.current) return;
-        if (connection.connectionState === "connected") {
+        const state = connection.connectionState;
+        if (state === "connected") {
+          // Only once the provider session is genuinely established, not on
+          // "connecting" — a false "active" would misreport a call that
+          // never actually went through.
+          reachedActiveRef.current = true;
+          if (callIdRef.current) void advanceCallSession(supabase, callIdRef.current, "active");
           setStatus((current) => (current === "connecting" ? "connected" : current));
-        } else if (connection.connectionState === "failed") {
+        } else if (state === "disconnected") {
+          // Transient: ICE may recover to "connected" on its own, which the
+          // branch above reports; if it does not, "failed" follows and ends
+          // the call there.
+          if (callIdRef.current) void advanceCallSession(supabase, callIdRef.current, "interrupted");
+        } else if (state === "failed") {
           fail(new Error("The voice connection was lost. Please try again."));
         }
       };
