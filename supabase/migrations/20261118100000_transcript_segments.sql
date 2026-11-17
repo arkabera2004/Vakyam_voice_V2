@@ -40,7 +40,10 @@ BEGIN
     RAISE EXCEPTION 'segment_text must not be empty' USING ERRCODE = '22023';
   END IF;
 
-  SELECT * INTO t FROM public.transcripts WHERE call_id = c.id;
+  -- Aliased and qualified: call_id is both this function's parameter and a
+  -- real column on transcripts, which PL/pgSQL treats as ambiguous
+  -- (variable_conflict defaults to 'error') unless disambiguated.
+  SELECT * INTO t FROM public.transcripts tr WHERE tr.call_id = c.id;
   IF t.id IS NULL THEN
     INSERT INTO public.transcripts (org_id, call_id, provider, language, status)
     VALUES (c.org_id, c.id, 'azure', language, 'partial')
