@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ROLES, can, canPlayRecording, isRole } from "./roles";
+import { ROLES, can, canAssignRole, canPlayRecording, isRole } from "./roles";
 
 describe("roles", () => {
   it("knows exactly the five agreed roles", () => {
@@ -28,5 +28,15 @@ describe("roles", () => {
     expect(canPlayRecording("agent", "u1", null)).toBe(false);
     expect(canPlayRecording("qa_analyst", "u1", "u2")).toBe(true);
     expect(canPlayRecording(null, "u1", "u1")).toBe(false);
+  });
+
+  it("only a super_admin can grant super_admin; managers grant everything else; non-managers grant nothing", () => {
+    expect(canAssignRole("super_admin", "super_admin")).toBe(true);
+    expect(canAssignRole("org_admin", "super_admin")).toBe(false);
+    expect(canAssignRole("org_admin", "org_admin")).toBe(true);
+    expect(canAssignRole("org_admin", "agent")).toBe(true);
+    expect(canAssignRole("supervisor", "agent")).toBe(false);
+    expect(canAssignRole("qa_analyst", "agent")).toBe(false);
+    expect(canAssignRole(null, "agent")).toBe(false);
   });
 });

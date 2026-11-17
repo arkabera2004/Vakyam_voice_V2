@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ROLES as DOMAIN_ROLES, can } from "../../../src/domain/roles";
+import { ROLES as DOMAIN_ROLES, can, canAssignRole as domainCanAssignRole } from "../../../src/domain/roles";
 import { ROLES, canAssignRole, canEdit, canManage, canReview } from "./permissions";
 
 describe("edge-function permissions mirror src/domain/roles.ts", () => {
@@ -17,13 +17,11 @@ describe("edge-function permissions mirror src/domain/roles.ts", () => {
     expect(canReview(undefined)).toBe(false);
   });
 
-  it("only a super_admin can grant super_admin; managers grant the rest; others grant nothing", () => {
-    expect(canAssignRole("super_admin", "super_admin")).toBe(true);
-    expect(canAssignRole("org_admin", "super_admin")).toBe(false);
-    expect(canAssignRole("org_admin", "org_admin")).toBe(true);
-    expect(canAssignRole("org_admin", "agent")).toBe(true);
-    expect(canAssignRole("supervisor", "agent")).toBe(false);
-    expect(canAssignRole("qa_analyst", "agent")).toBe(false);
-    expect(canAssignRole(null, "agent")).toBe(false);
+  it("agrees with the domain canAssignRole for every actor/target role pair", () => {
+    for (const actor of [...DOMAIN_ROLES, null]) {
+      for (const target of DOMAIN_ROLES) {
+        expect(canAssignRole(actor, target)).toBe(domainCanAssignRole(actor, target));
+      }
+    }
   });
 });

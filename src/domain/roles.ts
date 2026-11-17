@@ -49,3 +49,15 @@ export function canPlayRecording(role: Role | null | undefined, userId: string, 
   if (can(role, "recordings.play")) return true;
   return role === "agent" && !!callStartedBy && callStartedBy === userId;
 }
+
+/**
+ * Who may grant which role. Managers grant any role below super_admin; only
+ * a super_admin may create another super_admin. Mirrored in
+ * supabase/functions/_shared/permissions.ts, which cannot import this file
+ * across the Edge Function boundary; its test asserts the two agree.
+ */
+export function canAssignRole(actor: Role | null | undefined, target: Role): boolean {
+  if (!can(actor, "org.manage")) return false;
+  if (target === "super_admin") return actor === "super_admin";
+  return true;
+}
