@@ -29,12 +29,14 @@ interface Call {
 
 /**
  * Asks for a voice session. With speechOnly, only an Azure Speech token comes
- * back and no realtime session is spent. VITE_REALTIME_TOKEN_URL points at a
- * locally served copy of the realtime-token function, for trying changes
- * before deploying it.
+ * back and no realtime session is spent, and no callId is needed. For a full
+ * session, callId names the calls row start_call() already created, so the
+ * function uses that call's own agent configuration. VITE_REALTIME_TOKEN_URL
+ * points at a locally served copy of the realtime-token function, for trying
+ * changes before deploying it.
  */
-export const requestSession = async (speechOnly = false) => {
-  const body = { speechOnly };
+export const requestSession = async (speechOnly = false, callId?: string) => {
+  const body = { speechOnly, callId: callId ?? null };
   const localUrl = import.meta.env.VITE_REALTIME_TOKEN_URL as string | undefined;
   if (!localUrl) return supabase.functions.invoke("realtime-token", { body });
   const { data: auth } = await supabase.auth.getSession();
@@ -183,7 +185,7 @@ export const useVoiceAgent = (): UseVoiceAgentReturn => {
         navigator.mediaDevices.getUserMedia({
           audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
         }),
-        requestSession(),
+        requestSession(false, created.call.callId),
       ]);
       microphone = stream;
 

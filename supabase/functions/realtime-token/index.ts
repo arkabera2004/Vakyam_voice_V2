@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { buildDemoContext } from "./inventory.ts";
-import { FIRST_MESSAGE, INSTRUCTIONS, TEXT_INSTRUCTIONS } from "./prompt.ts";
 import { countFromContentRange, limitFromEnv, overLimit, parseTokenRequest } from "./limits.ts";
+import { resolveAgentConfig, type AgentVersionRow } from "./agentConfig.ts";
 
 // Set ALLOWED_ORIGIN to the app's origin in production; "*" is for local dev.
 const corsHeaders = {
@@ -22,7 +22,6 @@ serve(async (req) => {
     const resource = Deno.env.get("AZURE_OPENAI_RESOURCE");
     const apiKey = Deno.env.get("AZURE_OPENAI_API_KEY");
     const deployment = Deno.env.get("AZURE_REALTIME_DEPLOYMENT");
-    const voice = Deno.env.get("AZURE_REALTIME_VOICE") || "marin";
     if (!resource) throw new Error("AZURE_OPENAI_RESOURCE is not configured");
     if (!apiKey) throw new Error("AZURE_OPENAI_API_KEY is not configured");
     if (!deployment) throw new Error("AZURE_REALTIME_DEPLOYMENT is not configured");
@@ -31,7 +30,6 @@ serve(async (req) => {
     // the browser speaks it with a native Indian Azure voice instead.
     const speechKey = Deno.env.get("AZURE_SPEECH_KEY");
     const speechRegion = Deno.env.get("AZURE_SPEECH_REGION");
-    const speechVoice = Deno.env.get("AZURE_SPEECH_VOICE") || "en-IN-AartiIndicNeural";
     const indianVoice = Boolean(speechKey && speechRegion);
 
     // Only a signed-in user may start a call. The bearer value alone proves
@@ -49,8 +47,36 @@ serve(async (req) => {
 
     // The console's voice previews only need a Speech token; they must not
     // spend a realtime session (GAP-B-05).
-    const { speechOnly } = parseTokenRequest(req.method === "POST" ? await req.text() : null);
+    const { speechOnly, callId } = parseTokenRequest(req.method === "POST" ? await req.text() : null);
     if (speechOnly && !indianVoice) return json({ error: "Azure Speech is not configured" }, 404);
+
+    // A full session must name the call start_call() already created, so the
+    // agent configuration below comes from that call's own agent_version
+    // rather than a guess, and the token cannot be minted for a call that
+    // was not resolved for this user by start_call() in the first place.
+    let agentVersion: AgentVersionRow = null;
+    if (!speechOnly) {
+      if (!callId) return json({ error: "callId is required" }, 400);
+      const { id: userId } = await userResponse.json();
+      const callLookup = await fetch(`${supabaseUrl}/rest/v1/calls?id=eq.${callId}&select=started_by,status,agent_version_id`, {
+        headers: { Authorization: authHeader!, apikey: supabaseKey },
+      });
+      if (!callLookup.ok) throw new Error(`Could not read the call (${callLookup.status})`);
+      const [call] = (await callLookup.json()) as { started_by: string; status: string; agent_version_id: string | null }[];
+      if (!call) return json({ error: "Call not found" }, 404);
+      if (call.started_by !== userId) return json({ error: "This call does not belong to you" }, 403);
+      if (!["created", "initializing"].includes(call.status)) return json({ error: `This call is already ${call.status}` }, 409);
+      if (call.agent_version_id) {
+        const versionLookup = await fetch(`${supabaseUrl}/rest/v1/agent_versions?id=eq.${call.agent_version_id}&select=prompt,first_message,voice`, {
+          headers: { Authorization: authHeader!, apikey: supabaseKey },
+        });
+        if (!versionLookup.ok) throw new Error(`Could not read the agent version (${versionLookup.status})`);
+        [agentVersion] = (await versionLookup.json()) as AgentVersionRow[];
+      }
+    }
+    const agentConfig = resolveAgentConfig(agentVersion);
+    const voice = agentConfig.voiceOverride || Deno.env.get("AZURE_REALTIME_VOICE") || "marin";
+    const speechVoice = agentConfig.voiceOverride || Deno.env.get("AZURE_SPEECH_VOICE") || "en-IN-AartiIndicNeural";
 
     // Rate limit per user, counted and recorded with the caller's own JWT
     // under RLS on public.voice_sessions (GAP-S-02).
@@ -93,8 +119,8 @@ serve(async (req) => {
     // a short-lived token bound to this session configuration.
     const base = `https://${resource}.openai.azure.com/openai/v1/realtime`;
     const session = indianVoice
-      ? { output_modalities: ["text"], instructions: TEXT_INSTRUCTIONS }
-      : { audio: { output: { voice } }, instructions: INSTRUCTIONS };
+      ? { output_modalities: ["text"], instructions: agentConfig.textInstructions }
+      : { audio: { output: { voice } }, instructions: agentConfig.instructions };
     const [tokenResponse, speechResponse] = await Promise.all([
       fetch(`${base}/client_secrets`, {
         method: "POST",
@@ -127,7 +153,7 @@ serve(async (req) => {
       : undefined;
 
     // webrtcfilter=on keeps the prompt out of the events sent to the browser.
-    return json({ token, callUrl: `${base}/calls?webrtcfilter=on`, firstMessage: FIRST_MESSAGE, speech });
+    return json({ token, callUrl: `${base}/calls?webrtcfilter=on`, firstMessage: agentConfig.firstMessage, speech });
   } catch (error: unknown) {
     // Details (which secret is missing, what Azure said) stay in the function
     // logs; the browser gets a generic message (GAP-S-08).

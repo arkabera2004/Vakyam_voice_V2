@@ -3,11 +3,18 @@ import { countFromContentRange, limitFromEnv, overLimit, parseTokenRequest } fro
 
 describe("realtime-token limits", () => {
   it("treats only an explicit speechOnly:true as a speech-only request", () => {
-    expect(parseTokenRequest('{"speechOnly":true}')).toEqual({ speechOnly: true });
-    expect(parseTokenRequest('{"speechOnly":"yes"}')).toEqual({ speechOnly: false });
-    expect(parseTokenRequest("")).toEqual({ speechOnly: false });
-    expect(parseTokenRequest("not json")).toEqual({ speechOnly: false });
-    expect(parseTokenRequest(null)).toEqual({ speechOnly: false });
+    expect(parseTokenRequest('{"speechOnly":true}')).toEqual({ speechOnly: true, callId: null });
+    expect(parseTokenRequest('{"speechOnly":"yes"}')).toEqual({ speechOnly: false, callId: null });
+    expect(parseTokenRequest("")).toEqual({ speechOnly: false, callId: null });
+    expect(parseTokenRequest("not json")).toEqual({ speechOnly: false, callId: null });
+    expect(parseTokenRequest(null)).toEqual({ speechOnly: false, callId: null });
+  });
+
+  it("reads a string callId and rejects anything else", () => {
+    expect(parseTokenRequest('{"callId":"c1"}').callId).toBe("c1");
+    expect(parseTokenRequest('{"callId":""}').callId).toBeNull();
+    expect(parseTokenRequest('{"callId":42}').callId).toBeNull();
+    expect(parseTokenRequest('{"callId":null}').callId).toBeNull();
   });
 
   it("refuses the 11th session in an hour by default and honours a custom limit", () => {
