@@ -11,6 +11,7 @@ import {
   BookOpen,
   ShieldCheck,
   BarChart3,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -42,6 +43,7 @@ export const NAV: { group?: string; items: NavItem[] }[] = [
     items: [
       { to: "/console/compliance", label: "Compliance and consent", icon: ShieldCheck },
       { to: "/console/analytics", label: "Analytics", icon: BarChart3 },
+      { to: "/console/team", label: "Team", icon: Users },
     ],
   },
 ];

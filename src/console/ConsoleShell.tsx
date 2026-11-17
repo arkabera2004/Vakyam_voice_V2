@@ -23,6 +23,7 @@ const CRUMBS: Record<string, string> = {
   "/console/knowledge": "Knowledge and policies",
   "/console/compliance": "Compliance and consent",
   "/console/analytics": "Analytics",
+  "/console/team": "Team",
   "/console/alerts": "Alerts / Pune desk",
 };
 

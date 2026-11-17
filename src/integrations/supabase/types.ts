@@ -41,25 +41,90 @@ export type Database = {
       org_members: {
         Row: {
           created_at: string
+          disabled_at: string | null
+          disabled_by: string | null
           org_id: string
           role: "super_admin" | "org_admin" | "supervisor" | "agent" | "qa_analyst"
+          status: "active" | "disabled"
           user_id: string
         }
         Insert: {
           created_at?: string
+          disabled_at?: string | null
+          disabled_by?: string | null
           org_id: string
           role: "super_admin" | "org_admin" | "supervisor" | "agent" | "qa_analyst"
+          status?: "active" | "disabled"
           user_id: string
         }
         Update: {
           created_at?: string
+          disabled_at?: string | null
+          disabled_by?: string | null
           org_id?: string
           role?: "super_admin" | "org_admin" | "supervisor" | "agent" | "qa_analyst"
+          status?: "active" | "disabled"
           user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "org_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      // invitations is hand-added from
+      // supabase/migrations/20261117100000_voice_platform.sql and
+      // 20261117120000_invitation_lifecycle.sql; regenerate once applied.
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_user_id: string | null
+          created_at: string
+          email: string
+          error: string | null
+          expires_at: string
+          id: string
+          invited_by: string | null
+          invited_user_id: string | null
+          org_id: string
+          role: "super_admin" | "org_admin" | "supervisor" | "agent" | "qa_analyst"
+          status: "pending" | "accepted" | "revoked" | "expired" | "failed"
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email: string
+          error?: string | null
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          invited_user_id?: string | null
+          org_id: string
+          role: "super_admin" | "org_admin" | "supervisor" | "agent" | "qa_analyst"
+          status?: "pending" | "accepted" | "revoked" | "expired" | "failed"
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email?: string
+          error?: string | null
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          invited_user_id?: string | null
+          org_id?: string
+          role?: "super_admin" | "org_admin" | "supervisor" | "agent" | "qa_analyst"
+          status?: "pending" | "accepted" | "revoked" | "expired" | "failed"
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organisations"
@@ -99,7 +164,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      set_member_status: {
+        Args: { org: string; member: string; new_status: string }
+        Returns: Database["public"]["Tables"]["org_members"]["Row"]
+      }
     }
     Enums: {
       [_ in never]: never
