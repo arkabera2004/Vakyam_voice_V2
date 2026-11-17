@@ -1,0 +1,53 @@
+// Persists a browser voice session to the database: one start_call() RPC
+// call to create the row (org/agent/permission resolution happens there,
+// never duplicated here), then advance_call() RPC calls as the WebRTC
+// connection's real lifecycle unfolds. The client takes the minimal
+// interface it needs rather than the full supabase-js client, so this stays
+// unit-testable without mocking the SDK.
+
+import type { SessionState } from "@/domain/sessionState";
+
+export type RpcClient = {
+  rpc: (fn: string, args?: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { code?: string; message: string } | null }>;
+};
+
+export type StartedCall = { callId: string; agentId: string | null; agentVersionId: string | null };
+export type StartCallResult = { ok: true; call: StartedCall } | { ok: false; error: string };
+
+/** Maps start_call()'s Postgres error codes to messages safe to show the caller. */
+export function describeStartCallError(error: { code?: string; message: string } | null | undefined): string {
+  switch (error?.code) {
+    case "P0003":
+      return "You do not belong to an organisation yet. Ask an administrator to invite you.";
+    case "42501":
+      return "Your role is not allowed to start a voice call.";
+    case "P0004":
+      return "Your organisation has no voice agent configured yet.";
+    case "P0002":
+      return "That voice agent could not be found.";
+    default:
+      return error?.message || "The voice session could not be created. Please try again.";
+  }
+}
+
+type StartCallRow = { id: string; agent_id: string | null; agent_version_id: string | null };
+
+/** Creates the database call record before any microphone or provider request, so a permission or configuration problem is caught first. */
+export async function createCallSession(client: RpcClient, agentId?: string): Promise<StartCallResult> {
+  const { data, error } = await client.rpc("start_call", { agent: agentId ?? null });
+  if (error || !data) return { ok: false, error: describeStartCallError(error) };
+  const row = data as StartCallRow;
+  return { ok: true, call: { callId: row.id, agentId: row.agent_id, agentVersionId: row.agent_version_id } };
+}
+
+/**
+ * Advances the call's recorded state. Best-effort: a failure here (a race
+ * with another transition, or the row having reached a terminal state
+ * already) is logged, not thrown, since it must never interrupt the live
+ * call for the person on it. advance_call() is idempotent for a repeated
+ * same-state call, so reporting "active" on every ICE reconnect is safe.
+ */
+export async function advanceCallSession(client: RpcClient, callId: string, status: SessionState, reason?: string): Promise<void> {
+  const { error } = await client.rpc("advance_call", { call: callId, next_status: status, reason: reason ?? null });
+  if (error) console.error(`advance_call(${callId} -> ${status}) failed:`, error.message);
+}
