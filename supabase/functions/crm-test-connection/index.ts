@@ -7,7 +7,7 @@
 // the same way a direct client write would.
 
 import { authenticate, restHeaders } from "../_shared/auth.ts";
-import { HttpError, corsHeaders, jsonResponse, readJson } from "../_shared/http.ts";
+import { HttpError, corsHeaders, isUuid, jsonResponse, readJson } from "../_shared/http.ts";
 import { canManage } from "../_shared/permissions.ts";
 
 const env = {
@@ -33,8 +33,11 @@ Deno.serve(async (req) => {
     if (!caller.orgId || !canManage(caller.role)) return jsonResponse({ error: "Only organisation admins can test integrations" }, 403, cors);
 
     const body = (await readJson(req)) as { integrationId?: unknown };
-    const integrationId = typeof body.integrationId === "string" ? body.integrationId : null;
-    if (!integrationId) throw new HttpError(400, "integrationId is required");
+    // integrationId reaches a PostgREST URL below; a malformed value could
+    // inject extra filter operators into that query string, so it is
+    // validated as a plain UUID before ever being interpolated.
+    const integrationId = isUuid(body.integrationId) ? body.integrationId : null;
+    if (!integrationId) throw new HttpError(400, "integrationId must be a valid UUID");
 
     const lookup = await fetch(`${env.supabaseUrl}/rest/v1/crm_integrations?id=eq.${integrationId}&select=id,org_id,provider_key`, {
       headers: restHeaders(env, caller.token),

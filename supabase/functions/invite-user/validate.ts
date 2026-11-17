@@ -1,6 +1,7 @@
 // Request validation for invite-user. Pure, so vitest covers it.
 
 import { isRole, type Role } from "../_shared/permissions.ts";
+import { isUuid } from "../_shared/http.ts";
 
 export type InviteRequest =
   | { action: "invite"; email: string; role: Role }
@@ -9,7 +10,6 @@ export type InviteRequest =
 export type Validation = { ok: true; request: InviteRequest } | { ok: false; error: string };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Lower-cases and trims; the pending-invitation uniqueness index also lower-cases. */
 export function normaliseEmail(value: unknown): string | null {
@@ -28,9 +28,8 @@ export function validateInviteRequest(body: unknown): Validation {
     return { ok: true, request: { action: "invite", email, role: b.role } };
   }
   if (action === "revoke") {
-    const id = typeof b.invitationId === "string" ? b.invitationId : "";
-    if (!UUID.test(id)) return { ok: false, error: "invitationId must be a UUID" };
-    return { ok: true, request: { action: "revoke", invitationId: id } };
+    if (!isUuid(b.invitationId)) return { ok: false, error: "invitationId must be a UUID" };
+    return { ok: true, request: { action: "revoke", invitationId: b.invitationId } };
   }
   return { ok: false, error: "action must be invite or revoke" };
 }

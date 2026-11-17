@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { buildDemoContext } from "./inventory.ts";
 import { countFromContentRange, limitFromEnv, overLimit, parseTokenRequest } from "./limits.ts";
 import { resolveAgentConfig, type AgentVersionRow } from "./agentConfig.ts";
+import { isUuid } from "../_shared/http.ts";
 
 // Set ALLOWED_ORIGIN to the app's origin in production; "*" is for local dev.
 const corsHeaders = {
@@ -56,7 +57,10 @@ serve(async (req) => {
     // was not resolved for this user by start_call() in the first place.
     let agentVersion: AgentVersionRow = null;
     if (!speechOnly) {
-      if (!callId) return json({ error: "callId is required" }, 400);
+      // callId reaches a PostgREST URL below; a malformed value could inject
+      // extra filter operators into that query string, so it is validated
+      // as a plain UUID before ever being interpolated.
+      if (!callId || !isUuid(callId)) return json({ error: "callId must be a valid UUID" }, 400);
       const { id: userId } = await userResponse.json();
       const callLookup = await fetch(`${supabaseUrl}/rest/v1/calls?id=eq.${callId}&select=started_by,status,agent_version_id`, {
         headers: { Authorization: authHeader!, apikey: supabaseKey },

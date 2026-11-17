@@ -35,3 +35,18 @@ export async function readJson(req: Request): Promise<unknown> {
     throw new HttpError(400, "The request body is not valid JSON");
   }
 }
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * True only for a well-formed UUID. A PostgREST URL's query string is a
+ * filter expression (?id=eq.<value>&...): interpolating an unvalidated
+ * caller-supplied ID into one lets a value containing "&" or "," inject
+ * extra filter operators. RLS still bounds what rows are reachable, but
+ * every ID taken from a request body must pass this before being used in
+ * a REST URL, rather than relying on RLS alone to contain a malformed
+ * filter.
+ */
+export function isUuid(value: unknown): value is string {
+  return typeof value === "string" && UUID_PATTERN.test(value);
+}
