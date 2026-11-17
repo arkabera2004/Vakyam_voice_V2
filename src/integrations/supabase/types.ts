@@ -42,19 +42,19 @@ export type Database = {
         Row: {
           created_at: string
           org_id: string
-          role: "admin" | "supervisor" | "agent"
+          role: "super_admin" | "org_admin" | "supervisor" | "agent" | "qa_analyst"
           user_id: string
         }
         Insert: {
           created_at?: string
           org_id: string
-          role: "admin" | "supervisor" | "agent"
+          role: "super_admin" | "org_admin" | "supervisor" | "agent" | "qa_analyst"
           user_id: string
         }
         Update: {
           created_at?: string
           org_id?: string
-          role?: "admin" | "supervisor" | "agent"
+          role?: "super_admin" | "org_admin" | "supervisor" | "agent" | "qa_analyst"
           user_id?: string
         }
         Relationships: [

@@ -3,6 +3,7 @@ import { Btn, IconTile, Pill } from "@/console/ui";
 import { WayamMark } from "@/components/brand/WayamMark";
 import { useConsole } from "@/console/store";
 import { toast } from "@/hooks/use-toast";
+import { ROLE_LABEL } from "@/domain/roles";
 
 const ALERTS = [
   { id: "transfers", emoji: "🫱", title: "Meenal Joshi, Silver", sub: "Warm transfer to Asha, 38 sec wait", action: "Open", to: "/console/transfers" },
@@ -32,7 +33,7 @@ export default function MobileSupervisor() {
         <WayamMark size={36} />
         <div className="flex-1">
           <p className="text-lg font-semibold leading-tight">Pune desk</p>
-          <p className="text-xs text-zinc-500">{me.name}{me.role ? `, ${me.role}` : ""}</p>
+          <p className="text-xs text-zinc-500">{me.name}{me.role ? `, ${ROLE_LABEL[me.role]}` : ""}</p>
         </div>
         <Pill tone="green">14 live</Pill>
       </div>

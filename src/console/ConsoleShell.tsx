@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { WayamMark } from "@/components/brand/WayamMark";
 import { cn } from "@/lib/utils";
 import { NAV } from "./nav";
+import { ROLE_LABEL } from "@/domain/roles";
 import { Btn } from "./ui";
 
 const CRUMBS: Record<string, string> = {
@@ -100,7 +101,7 @@ export function ConsoleShell() {
   const pathname = useLocation().pathname.replace(/\/+$/, "") || "/";
   const { signOut } = useAuth();
   const { state, me, reset } = useConsole();
-  const roleLine = me.role ? `${me.role[0].toUpperCase()}${me.role.slice(1)} · ${me.orgName ?? "organisation"}` : "No organisation yet";
+  const roleLine = me.role ? `${ROLE_LABEL[me.role]} · ${me.orgName ?? "organisation"}` : "No organisation yet";
   const liveId = Number(pathname.split("/console/live/")[1]);
   const liveCall = LIVE_CALLS.find((c) => c.id === liveId);
   const crumb = CRUMBS[pathname] ?? (liveCall ? `Live calls / Call ${liveCall.id}, ${liveCall.name}` : "Console");

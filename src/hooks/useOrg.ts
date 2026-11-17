@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-
-export type OrgRole = "admin" | "supervisor" | "agent";
+import { can, isRole, type Role } from "@/domain/roles";
 
 export type Me = {
   /** Profile display name, else the email's local part, else "Signed in". */
@@ -10,7 +9,7 @@ export type Me = {
   /** Null until the org_members migration is applied or the user is added to an organisation. */
   orgId: string | null;
   orgName: string | null;
-  role: OrgRole | null;
+  role: Role | null;
   loading: boolean;
 };
 
@@ -22,8 +21,8 @@ export function displayNameFor(profile: { display_name: string | null; email: st
   return local || "Signed in";
 }
 
-/** Supervisors and admins may change organisation data; agents only read. */
-export const canEdit = (role: OrgRole | null) => role === "admin" || role === "supervisor";
+/** Operational edits (agents, calls, knowledge): admins and supervisors. Thin alias over the permission matrix. */
+export const canEdit = (role: Role | null) => can(role, "agents.edit");
 
 const EMPTY: Me = { name: "Signed in", orgId: null, orgName: null, role: null, loading: true };
 
@@ -46,7 +45,13 @@ export function useOrg(): Me {
       ]);
       if (cancelled) return;
       const m = membership.error ? null : membership.data;
-      setMe({ name: displayNameFor(profile, user.email), orgId: m?.org_id ?? null, orgName: m?.organisations?.name ?? null, role: m?.role ?? null, loading: false });
+      setMe({
+        name: displayNameFor(profile, user.email),
+        orgId: m?.org_id ?? null,
+        orgName: m?.organisations?.name ?? null,
+        role: isRole(m?.role) ? m.role : null,
+        loading: false,
+      });
     })();
     return () => {
       cancelled = true;
