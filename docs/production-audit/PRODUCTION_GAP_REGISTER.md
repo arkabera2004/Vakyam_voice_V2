@@ -34,6 +34,20 @@
 | GAP-O-01 monitoring/backups | **Open** | — | Needs a Sentry DSN and a backup decision |
 | GAP-O-02 deploy target | **Open** | — | User decision: SWA, Vercel or Docker |
 
+## Continuation gaps added 2026-11-17 (see `docs/CONTINUATION_STATUS.md`)
+
+| ID | Severity | Description | Module | Required implementation | Acceptance | Status | Evidence | Blocking dependency |
+|---|---|---|---|---|---|---|---|---|
+| GAP-C-01 | P0 | Migrations `20261116140000` → `20261117100000` are written but applied nowhere; pgTAP never executed | `supabase/migrations`, `supabase/tests` | Run on a local stack, fix failures, then `db push` to `eshtcyzraxojwkzqgqld` | Both pgTAP files pass; REST probe answers 200 for `organisations`, `calls`, `recordings` | OPEN | REST probe 404 on all new tables | Local: Docker daemon. Remote: Supabase access token |
+| GAP-C-02 | P0 | Public signup still enabled | Supabase Auth | Dashboard switch | `scripts/check-auth-settings.sh` passes | BLOCKED | `disable_signup=false` 2026-11-17 | Dashboard access |
+| GAP-C-03 | P0 | No invitation-only user management (`invite-user` function, acceptance, revocation, deactivation) | Phase 2 | Edge function + shared auth helper + tests + UI | Real admin invites a real user who accepts and sees only permitted screens | OPEN | files do not exist | GAP-C-01 for end-to-end |
+| GAP-C-04 | P1 | SPA role type diverged from the five-role matrix | `useOrg.ts`, `types.ts` | Single source via `roles.ts` | tsc passes; `canEdit` delegates to `can()` | DONE `104ae71` | vitest 40/40 | — |
+| GAP-C-05 | P1 | Agent configuration is not versioned per session in the function; prompt/voice are constants | Phase 4/5 | Function reads `agent_versions`; `calls.agent_version_id` set | Changing voice in Studio changes the next call | OPEN | `realtime-token/index.ts` uses `prompt.ts` | GAP-C-01 |
+| GAP-C-06 | P1 | Browser session never creates/advances a `calls` row | Phase 6 | `create_call` RPC on start, `advance_call` on state changes, sweeper schedule | Session visible on Live/Review with correct terminal state after tab close | OPEN | `useVoiceAgent.ts` has no DB writes | GAP-C-01 |
+| GAP-C-07 | P1 | No recording upload, transcript persistence or retention job | Phase 7 | Upload path, `recordings`/`transcripts` writes, `retention-sweep` function (dry-run default) | Real call produces private object + transcript rows; dry-run report lists eligible items without deleting | OPEN | — | GAP-C-01, consent wording |
+| GAP-C-08 | P1 | No evaluation engine, analytics or CRM execution | Phases 8–10 | Per phase plan | Per phase acceptance | OPEN | — | GAP-C-01 |
+| GAP-C-09 | P1 | Azure provider has no adapter boundary, health check or usage records | Phase 5 | `providers/azure` adapter, `usage_records` writes | Health endpoint reports real status; usage rows per call | OPEN | — | — |
+
 Original register follows.
 
 Priority: **P0** must fix before any deployment · **P1** must fix before a client uses it · **P2** before wider rollout · **P3** improvement.

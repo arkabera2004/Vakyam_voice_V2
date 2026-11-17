@@ -38,7 +38,23 @@ One entry per atomic commit or verified fact. States: IMPLEMENTED (code in repo)
 - Role model: `super_admin`, `org_admin`, `supervisor`, `agent`, `qa_analyst`, organisation-level, single source in `src/domain/roles.ts` and SQL helpers.
 - Domain rules (session state machine, consent gate, retention eligibility, permissions) are written as framework-free modules under `src/domain/` with unit tests, so they are TESTED even while persistence is BLOCKED.
 
-### Commits
+### Commits (2026-11-16 → 2026-11-17 session 1)
 | SHA | Change | Tests | Push |
 |---|---|---|---|
-| (filled per commit below) | | | |
+| `4f235a6` | feat(db): five agreed roles, permission tiers and call state columns | SQL parse only | verified |
+| `ff2ef6b` | feat(domain): permission matrix as the single source for roles | vitest | verified |
+| `1a34019` | feat(domain): voice session state machine | vitest | verified |
+| `ac7135d` | feat(db): voice platform schema, state transitions, buckets and pgTAP tests | SQL parse only; pgTAP NOT executed | verified |
+
+## 2026-11-17 — Continuation session 2
+
+### Phase 0: recovery audit (VERIFIED)
+- Local HEAD == `v2/main` == `ac7135d` at start. Untracked `src/domain/{consent,retention}*.ts` were complete and passing. The invite-user, retention-sweep and `_shared/auth.ts` files the earlier transcript mentioned never existed on disk.
+- Full report: `docs/CONTINUATION_STATUS.md`.
+- Baseline on `ac7135d` + domain files: vitest 15 files / 40 tests pass; tsc app+node pass; eslint 0/0.
+- Live project probe: `disable_signup=false` still; only `profiles` exists; no buckets; function answers 401 unauthenticated. Supabase MCP connector denied; CLI has no token. Docker Desktop installed but daemon was not running (started this session).
+
+| Date | Phase | SHA | Message | Changed | Tests | Result | Push |
+|---|---|---|---|---|---|---|---|
+| 2026-11-17 | 0 | `9d1fe0c` | feat(domain): recording consent gate and retention planning | 4 files under `src/domain/` | `vitest run` | 40/40 | `git ls-remote v2` = `9d1fe0c` |
+| 2026-11-17 | 0 | `104ae71` | fix(roles): make the SPA use the five-role permission matrix | `useOrg.ts(.test)`, `types.ts`, `ConsoleShell.tsx`, `MobileSupervisor.tsx` | tsc, eslint, `vitest run` | 40/40 | `git ls-remote v2` = `104ae71` |
