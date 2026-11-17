@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { SpeechOutput } from "@/lib/speechOutput";
-import { advanceCallSession, createCallSession } from "@/lib/callSession";
+import { advanceCallSession, appendTranscriptSegment, createCallSession } from "@/lib/callSession";
 import type { SessionState } from "@/domain/sessionState";
 
 export type VoiceStatus = "idle" | "connecting" | "connected" | "speaking" | "listening" | "error";
@@ -239,14 +239,28 @@ export const useVoiceAgent = (): UseVoiceAgentReturn => {
           }),
         );
       });
+      // Accumulates the model's text deltas into one finished turn, persisted
+      // as a transcript segment on "done". Only available on the text +
+      // Azure-Speech voice path: the raw-audio path has no text to capture,
+      // and the caller's (member's) turns need Azure's
+      // input_audio_transcription enabled in the session, not done here
+      // (see docs/CONTINUATION_STATUS.md).
+      let agentTurn = "";
       events.addEventListener("message", (message) => {
         if (attempt !== attemptRef.current) return;
         const { type, delta } = JSON.parse(message.data) as { type?: string; delta?: string };
         if (speech) {
           // The model replies in text; the Indian voice speaks it.
-          if (type === "response.output_text.delta" && delta) speech.addText(delta);
-          else if (type === "response.output_text.done") speech.finish();
-          else if (type === "input_audio_buffer.speech_started") speech.interrupt();
+          if (type === "response.output_text.delta" && delta) {
+            speech.addText(delta);
+            agentTurn += delta;
+          } else if (type === "response.output_text.done") {
+            speech.finish();
+            if (callIdRef.current && agentTurn) void appendTranscriptSegment(supabase, callIdRef.current, "agent", agentTurn);
+            agentTurn = "";
+          } else if (type === "input_audio_buffer.speech_started") {
+            speech.interrupt();
+          }
           return;
         }
         if (type === "output_audio_buffer.started") {

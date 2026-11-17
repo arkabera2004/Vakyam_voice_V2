@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { advanceCallSession, createCallSession, describeStartCallError, type RpcClient } from "./callSession";
+import { advanceCallSession, appendTranscriptSegment, createCallSession, describeStartCallError, type RpcClient } from "./callSession";
 
 const fakeClient = (impl: RpcClient["rpc"]): RpcClient => ({ rpc: impl });
 
@@ -56,5 +56,25 @@ describe("advanceCallSession", () => {
   it("never throws, even when the RPC errors", async () => {
     const client = fakeClient(async () => ({ data: null, error: { message: "already completed" } }));
     await expect(advanceCallSession(client, "c1", "cancelled")).resolves.toBeUndefined();
+  });
+});
+
+describe("appendTranscriptSegment", () => {
+  it("calls append_transcript_segment with the call id, speaker and text", async () => {
+    const rpc = vi.fn(async () => ({ data: {}, error: null }));
+    await appendTranscriptSegment(fakeClient(rpc), "c1", "agent", "Namaste!");
+    expect(rpc).toHaveBeenCalledWith("append_transcript_segment", { call_id: "c1", speaker: "agent", segment_text: "Namaste!" });
+  });
+
+  it("skips blank or whitespace-only text without calling the RPC", async () => {
+    const rpc = vi.fn(async () => ({ data: {}, error: null }));
+    await appendTranscriptSegment(fakeClient(rpc), "c1", "agent", "   ");
+    await appendTranscriptSegment(fakeClient(rpc), "c1", "agent", "");
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("never throws, even when the RPC errors", async () => {
+    const client = fakeClient(async () => ({ data: null, error: { message: "call not found" } }));
+    await expect(appendTranscriptSegment(client, "c1", "agent", "hello")).resolves.toBeUndefined();
   });
 });

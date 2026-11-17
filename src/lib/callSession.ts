@@ -51,3 +51,17 @@ export async function advanceCallSession(client: RpcClient, callId: string, stat
   const { error } = await client.rpc("advance_call", { call: callId, next_status: status, reason: reason ?? null });
   if (error) console.error(`advance_call(${callId} -> ${status}) failed:`, error.message);
 }
+
+export type TranscriptSpeaker = "agent" | "caller" | "system";
+
+/**
+ * Appends one finished spoken turn to the call's transcript. Best-effort,
+ * like advanceCallSession: a dropped segment should never interrupt the
+ * live call. Blank text is silently skipped rather than sent, since the
+ * server rejects it anyway and an empty turn carries nothing worth keeping.
+ */
+export async function appendTranscriptSegment(client: RpcClient, callId: string, speaker: TranscriptSpeaker, text: string): Promise<void> {
+  if (!text.trim()) return;
+  const { error } = await client.rpc("append_transcript_segment", { call_id: callId, speaker, segment_text: text });
+  if (error) console.error(`append_transcript_segment(${callId}, ${speaker}) failed:`, error.message);
+}
