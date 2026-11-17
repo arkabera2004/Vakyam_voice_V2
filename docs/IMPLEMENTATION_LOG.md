@@ -85,8 +85,17 @@ One entry per atomic commit or verified fact. States: IMPLEMENTED (code in repo)
 | 2026-11-18 | 3 | `f9c902e` | feat(voice): agentConfig merges a published agent_version over the seed | `realtime-token/agentConfig.ts(.test)` | `vitest run`, `deno check` | 73/73 | `git ls-remote v2` = `f9c902e` |
 | 2026-11-18 | 3 | `a040173` | feat(voice): realtime-token uses the call's own agent configuration | `realtime-token/{index,limits}.ts(.test)`, `useVoiceAgent.ts` | `vitest run`, `deno check`, `tsc`, `eslint`, `npm run build` | 73/73 | `git ls-remote v2` = `a040173` |
 
+### Session 3, Phase 4 (part 1 and 2): consent resolution and transcript persistence
+
+| Date | Phase | SHA | Message | Changed | Tests | Result | Push |
+|---|---|---|---|---|---|---|---|
+| 2026-11-18 | 4 | `c8335f2` | feat(db): resolve consent at call creation | `20261117150000_call_consent_resolution.sql`, `calls.test.sql` | SQL parse only; pgTAP NOT executed | 12 assertions written | `git ls-remote v2` = `c8335f2` |
+| 2026-11-18 | 4 | `ddad3bf` | feat(db): append_transcript_segment(), finalised on a terminal call | `20261118100000_transcript_segments.sql`, `transcripts.test.sql` | SQL parse only; pgTAP NOT executed | 10 assertions written | `git ls-remote v2` = `ddad3bf` |
+| 2026-11-18 | 4 | `409a2ab` | feat(voice): persist the agent's spoken turns as transcript segments | `src/lib/callSession.ts(.test)`, `useVoiceAgent.ts` | `vitest run`, `tsc`, `eslint`, `npm run build` | 76/76 | `git ls-remote v2` = `409a2ab` |
+
 ### Session 3 summary
-- Baseline: 21 test files / 73 unit tests pass, tsc clean (app+node), eslint 0/0, production build passes, every Edge Function Deno-checks clean.
+- Baseline: 21 test files / 76 unit tests pass, tsc clean (app+node), eslint 0/0, production build passes, every Edge Function Deno-checks clean.
 - Docker: exhausted every sanctioned remediation path (`open -a Docker`, `osascript quit app`, `docker desktop restart`, `docker desktop start`); the official restart command itself reports failure to stop the hung backend. This needs the user to force-quit Docker Desktop (Activity Monitor) or restart the machine — force-killing processes directly is outside what this session may do.
-- Phase 2 (browser call persistence) and Phase 3 (agent-driven realtime-token) are code-complete and unit-tested; neither is deployed or verified against the live Supabase project or real Azure credentials.
-- Next task: Phase 4 — recording upload, transcript persistence from the data channel, and consent gating before a call may record.
+- Phase 2 (browser call persistence), Phase 3 (agent-driven realtime-token) and the server-side half of Phase 4 (consent resolution, agent-turn transcript persistence) are code-complete and unit-tested; none is deployed or verified against the live Supabase project or real Azure credentials.
+- Explicitly not attempted, with reasons recorded in `docs/CONTINUATION_STATUS.md`: audio recording upload, the member's (caller's) transcript turns, and how a member's verbal consent is captured — the first two need a real browser/live Azure session this environment cannot provide, the third needs a product decision.
+- Next task: a product decision on consent capture, then recording upload once that and a verifiable browser/Azure path exist; independently, Phase 6 (evaluation workflow) or wiring Agent Studio to real data can proceed without either.

@@ -123,11 +123,25 @@ Baseline after this session: **21 test files, 73 unit tests, tsc clean (app+node
 
 Known residual item: the Agent Studio console screen still writes to `localStorage`, not `agent_versions` — the API-level plumbing (`agent_versions` → `realtime-token`) is real and tested, but nothing in the UI lets an admin publish a new prompt/voice yet. That is Phase 10/12 frontend-integration scope, not done this session.
 
+### Session 3 continued: consent resolution and transcript persistence (commits `c8335f2`, `409a2ab`)
+
+- `start_call()` now also resolves whether the new call may record, mirroring `src/domain/consent.ts`'s `decideRecording()` exactly: no approved policy → `recording_allowed=false`; an approved disclosure-only policy → allowed immediately; a policy requiring explicit consent → not yet allowed (nothing has captured the member's answer). 3 new pgTAP assertions.
+- `append_transcript_segment()` lets the call's owner (or an org editor) write ordered transcript segments; `advance_call()` now finalises a transcript when its call reaches a terminal state. 10 pgTAP assertions.
+- Client: the agent's spoken turns (text + Azure-Speech voice path only) are now persisted as transcript segments in real time, using message types the hook already handled — no new Azure protocol behaviour was introduced.
+
+**Deliberately not attempted this session**, and why:
+- **Audio recording upload.** Needs a `MediaRecorder` → private-bucket pipeline I cannot exercise end-to-end without a real browser and live Azure session.
+- **The caller's (member's) transcript turns.** Needs Azure Realtime's `input_audio_transcription` requested in the session config — a live-Azure-only protocol change I cannot verify works as expected without testing against a real Azure resource.
+- **How explicit verbal consent is captured.** The domain model (`decideRecording`) already distinguishes "not required" from "required and not given," but nothing in a voice-only interface currently converts a spoken "yes" into a `given`/`declined` outcome. This is a product-design question, not an engineering one, and invented behaviour here would risk a compliance-sensitive feature being wrong by construction.
+
+Baseline after this addition: **21 test files, 76 unit tests, tsc clean, eslint 0/0, build passes.**
+
 ## Exact next implementation task
 
-1. Once Docker (or Supabase CLI access) is available: `supabase db reset` + `supabase test db` to execute all five pgTAP files (`rls`, `voice_platform`, `invitations`, `retention`, `calls`) for real; fix anything they reveal.
-2. Phase 4: recording upload (MediaRecorder → private bucket), transcript persistence from the realtime data channel's text events, and consent gating before a call is allowed to record.
-3. Wire the Agent Studio screen to read/write `agents`/`agent_versions` for real, closing the loop Phase 3 opened.
+1. Once Docker (or Supabase CLI access) is available: `supabase db reset` + `supabase test db` to execute all six pgTAP files (`rls`, `voice_platform`, `invitations`, `retention`, `calls`, `transcripts`) for real; fix anything they reveal.
+2. Design (with the product owner) how explicit verbal consent is captured in a voice-only interface, then wire it.
+3. Recording upload: `MediaRecorder` on the browser's local/remote audio, private bucket upload, `recordings` metadata row, gated by `calls.recording_allowed`.
+4. Wire the Agent Studio screen to read/write `agents`/`agent_versions` for real, closing the loop Phase 3 opened.
 
 ## External blockers (need the product owner)
 
