@@ -9,6 +9,7 @@ import { useOrg } from "@/hooks/useOrg";
 import { can } from "@/domain/roles";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { nextVersion } from "@/lib/agentVersion";
 
 type Agent = { id: string; name: string; description: string; liveVersion: string | null };
 type AgentVersion = {
@@ -28,12 +29,6 @@ type Draft = { prompt: string; firstMessage: string; voice: string; speed: numbe
 
 const SAMPLE = "Namaste, main Meera bol rahi hoon. Kumbhalgarh mein aapke liye ek Studio available hai.";
 const EMPTY_DRAFT: Draft = { prompt: "", firstMessage: "", voice: "aarti", speed: 1.05, warmth: 70, personaTone: "", personaHandoff: "", dictionary: [] };
-
-/** Next version string after the given list, e.g. v1..v9 -> v10. Falls back to v1 for the first version. */
-function nextVersion(existing: string[]): string {
-  const numbers = existing.map((v) => Number(v.replace(/^v/i, ""))).filter((n) => Number.isFinite(n));
-  return `v${numbers.length ? Math.max(...numbers) + 1 : 1}`;
-}
 
 function rowToVersion(row: { id: string; version: string; prompt: string; first_message: string; voice: string; speed: number; warmth: number; persona_tone: string; persona_handoff: string; dictionary: unknown; created_at: string }): AgentVersion {
   return {
