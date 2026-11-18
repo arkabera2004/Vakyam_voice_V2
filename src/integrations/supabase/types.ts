@@ -450,6 +450,7 @@ export type Database = {
         Row: {
           agent_version_id: string | null
           caller_name: string
+          caller_tier: string | null
           consent_outcome: string | null
           duration_ms: number | null
           ended_at: string | null
@@ -466,6 +467,7 @@ export type Database = {
         Insert: {
           agent_version_id?: string | null
           caller_name?: string
+          caller_tier?: string | null
           consent_outcome?: string | null
           duration_ms?: number | null
           ended_at?: string | null
@@ -482,6 +484,7 @@ export type Database = {
         Update: {
           agent_version_id?: string | null
           caller_name?: string
+          caller_tier?: string | null
           consent_outcome?: string | null
           duration_ms?: number | null
           ended_at?: string | null
@@ -716,6 +719,15 @@ export type Database = {
         Insert: { bucket?: string; call_id: string; duration_ms?: number | null; format?: string; id?: string; object_path: string; org_id: string; status?: "pending" | "uploaded" | "verified" | "failed" | "deleted" }
         Update: { bucket?: string; call_id?: string; duration_ms?: number | null; format?: string; id?: string; object_path?: string; org_id?: string; status?: "pending" | "uploaded" | "verified" | "failed" | "deleted" }
         Relationships: [{ foreignKeyName: "recordings_call_id_fkey"; columns: ["call_id"]; isOneToOne: true; referencedRelation: "calls"; referencedColumns: ["id"] }]
+      }
+      // transfers is hand-added from
+      // supabase/migrations/20261116150000_domain_schema.sql; regenerate
+      // this file with `supabase gen types` once applied.
+      transfers: {
+        Row: { call_id: string | null; created_at: string; id: string; notes: string[]; org_id: string; state: "ringing" | "accepted" | "declined"; summary: string[]; to_name: string | null }
+        Insert: { call_id?: string | null; created_at?: string; id?: string; notes?: string[]; org_id: string; state?: "ringing" | "accepted" | "declined"; summary?: string[]; to_name?: string | null }
+        Update: { call_id?: string | null; created_at?: string; id?: string; notes?: string[]; org_id?: string; state?: "ringing" | "accepted" | "declined"; summary?: string[]; to_name?: string | null }
+        Relationships: [{ foreignKeyName: "transfers_call_id_fkey"; columns: ["call_id"]; isOneToOne: false; referencedRelation: "calls"; referencedColumns: ["id"] }]
       }
       // notifications is hand-added from
       // supabase/migrations/20261117100000_voice_platform.sql; regenerate
