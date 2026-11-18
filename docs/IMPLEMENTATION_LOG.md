@@ -114,3 +114,13 @@ While writing `submit_evaluation()`, I recognised the same bug class I had just 
 ### Scope note
 
 Per the user's explicit instruction, Docker/local-pgTAP-execution recovery was deliberately deferred this session; all five new pgTAP files (`calls`, `transcripts`, `evaluations`, `crm_sync`, plus the extended `calls` consent assertions) remain SQL-parse-verified and line-by-line reviewed, but never executed. This is the standing verification gap across the whole session, not specific to any one phase.
+
+## 2026-11-18 — Session 3 continued again: reviewer assignment and QA Scorecards wiring
+
+| Date | Phase | SHA | Message | Changed | Tests | Result | Push |
+|---|---|---|---|---|---|---|---|
+| 2026-11-18 | 6 | `01751d5` | feat(db): reviewer assignment and flagging for the evaluation queue | `20261118130000_evaluation_review_assignment.sql`, `evaluation_assignment.test.sql` | SQL parse only; pgTAP NOT executed | 10 assertions written | `git ls-remote v2` = `01751d5` |
+| 2026-11-18 | 10 | `b79a7c2` | feat(console): wire QA scorecards to real evaluations, not demo data | `types.ts`, `QAScorecards.tsx` | tsc, eslint, `vitest run`, `npm run build` | 78/78 | `git ls-remote v2` = `b79a7c2` |
+
+### Summary
+Replaced QAScorecards.tsx's fictional per-prompt-version heatmap, fixed flagged-call list and hardcoded reviewer names with real data: criterion averages computed from `evaluation_scores`, actually-flagged `evaluations` (below their template's `pass_threshold`, now computed server-side), and a reviewer dropdown backed by the org's real `evaluations.review`-tier members. Deliberately did not build an "edit rubric weights" flow: `evaluation_criteria` is read by `submit_evaluation()`, so editing it in place would silently reinterpret every past score computed under the old weights; a real fix needs template versioning (a new `evaluation_templates` row, not an edit), which is future scope, not something to fake. Baseline: 22 test files, 78 unit tests, tsc clean, eslint 0/0, build passes.

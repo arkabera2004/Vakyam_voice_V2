@@ -145,12 +145,20 @@ Baseline after this addition: **21 test files, 76 unit tests, tsc clean, eslint 
 
 Baseline after this session: **22 test files, 78 unit tests, tsc clean, eslint 0/0, build passes.** Nine pgTAP files now exist (`rls`, `voice_platform`, `invitations`, `retention`, `calls`, `transcripts`, `evaluations`, `crm_sync`), none executed — Docker remains the standing blocker, deferred per explicit instruction.
 
+### Session 3, continued once more on "continue with the evaluation workflow" (commits `01751d5`, `b79a7c2`)
+
+- Added `assigned_reviewer_id` and `flagged` to `evaluations`; `assign_evaluation_reviewer()` sets/clears the assignment, checking the chosen reviewer is an active org member; `submit_evaluation()` now computes `flagged` (below the template's `pass_threshold`) at creation. 10 pgTAP assertions.
+- Rewired `QAScorecards.tsx` to real data: criterion averages from `evaluation_scores`, real flagged evaluations joined to calls, a reviewer dropdown from real `evaluations.review`-tier members, and a Review action that opens real per-criterion scores and submits a human review via `add_evaluation_review()`.
+- Deliberately did **not** build rubric-weight editing: `evaluation_criteria` is read live by `submit_evaluation()`, so editing it in place would silently reinterpret every past score computed under the old weights. The original screen's "Edit rubric" modal did exactly that with no safeguard. Replaced with a read-only view; a real fix needs template versioning (a new `evaluation_templates` row), which is future scope.
+
+Baseline: **22 test files, 78 unit tests, tsc clean, eslint 0/0, build passes.** This repository's QA Scorecards screen is now evaluation-workflow-complete at the code level: create → flag → assign → review, all against real tables, nothing left as demo data on that screen.
+
 ## Exact next implementation task
 
 1. Once Docker (or Supabase CLI access) is available: `supabase db reset` + `supabase test db` to execute all pgTAP files for real; fix anything they reveal.
 2. Design (with the product owner) how explicit verbal consent is captured in a voice-only interface, then wire it.
 3. Recording upload: `MediaRecorder` on the browser's local/remote audio, private bucket upload, `recordings` metadata row, gated by `calls.recording_allowed`.
-4. Wire the Agent Studio screen to read/write `agents`/`agent_versions` for real, closing the loop Phase 3 opened. (QAScorecards.tsx and Analytics.tsx were deliberately not attempted this session: both are built around concepts — per-prompt-version rubric heatmaps, pre-assignment of a reviewer before any review exists, cost-per-model breakdowns — that don't map cleanly onto the existing schema, and wiring them would mean inventing product design rather than plumbing existing data.)
+4. Wire the Agent Studio screen to read/write `agents`/`agent_versions` for real, closing the loop Phase 3 opened. Analytics.tsx remains demo data for the same reason QAScorecards.tsx originally was: several of its widgets (language-mix donut, cost-per-model table) don't map onto the existing schema without inventing a pricing/rate table, which is a product decision, not plumbing.
 
 ## External blockers (need the product owner)
 
