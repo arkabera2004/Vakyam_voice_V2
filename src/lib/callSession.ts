@@ -11,7 +11,7 @@ export type RpcClient = {
   rpc: (fn: string, args?: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { code?: string; message: string } | null }>;
 };
 
-export type StartedCall = { callId: string; agentId: string | null; agentVersionId: string | null };
+export type StartedCall = { callId: string; orgId: string; agentId: string | null; agentVersionId: string | null; recordingAllowed: boolean; recordingSkipReason: string | null };
 export type StartCallResult = { ok: true; call: StartedCall } | { ok: false; error: string };
 
 /** Maps start_call()'s Postgres error codes to messages safe to show the caller. */
@@ -30,14 +30,17 @@ export function describeStartCallError(error: { code?: string; message: string }
   }
 }
 
-type StartCallRow = { id: string; agent_id: string | null; agent_version_id: string | null };
+type StartCallRow = { id: string; org_id: string; agent_id: string | null; agent_version_id: string | null; recording_allowed: boolean; recording_skip_reason: string | null };
 
 /** Creates the database call record before any microphone or provider request, so a permission or configuration problem is caught first. */
 export async function createCallSession(client: RpcClient, agentId?: string): Promise<StartCallResult> {
   const { data, error } = await client.rpc("start_call", { agent: agentId ?? null });
   if (error || !data) return { ok: false, error: describeStartCallError(error) };
   const row = data as StartCallRow;
-  return { ok: true, call: { callId: row.id, agentId: row.agent_id, agentVersionId: row.agent_version_id } };
+  return {
+    ok: true,
+    call: { callId: row.id, orgId: row.org_id, agentId: row.agent_id, agentVersionId: row.agent_version_id, recordingAllowed: row.recording_allowed, recordingSkipReason: row.recording_skip_reason },
+  };
 }
 
 /**
@@ -64,4 +67,24 @@ export async function appendTranscriptSegment(client: RpcClient, callId: string,
   if (!text.trim()) return;
   const { error } = await client.rpc("append_transcript_segment", { call_id: callId, speaker, segment_text: text });
   if (error) console.error(`append_transcript_segment(${callId}, ${speaker}) failed:`, error.message);
+}
+
+export type NewRecording = { objectPath: string; format: string; sizeBytes: number; durationMs: number; checksum?: string };
+
+/**
+ * Registers an already-uploaded recording's metadata. Best-effort like the
+ * other calls here: a failure leaves the uploaded object orphaned (no row
+ * ever points to it, so it stays unreachable through playback) rather than
+ * retrying against a live call that has already ended.
+ */
+export async function createRecording(client: RpcClient, callId: string, recording: NewRecording): Promise<void> {
+  const { error } = await client.rpc("create_recording", {
+    target_call_id: callId,
+    recording_object_path: recording.objectPath,
+    recording_format: recording.format,
+    recording_size_bytes: recording.sizeBytes,
+    recording_duration_ms: recording.durationMs,
+    recording_checksum: recording.checksum ?? null,
+  });
+  if (error) console.error(`create_recording(${callId}) failed:`, error.message);
 }

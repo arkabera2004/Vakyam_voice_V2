@@ -41,6 +41,8 @@ export class SpeechOutput {
     settings: SpeechSettings,
     private readonly context: AudioContext,
     private readonly onSpeakingChange: (speaking: boolean) => void,
+    /** Also fed every synthesised chunk, so a recording captures what Meera actually said even though her audio is generated here, not carried on the WebRTC remote track. */
+    private readonly recordingTap?: AudioNode,
   ) {
     this.config = sdk.SpeechConfig.fromAuthorizationToken(settings.token, settings.region);
     this.config.speechSynthesisVoiceName = settings.voice;
@@ -152,6 +154,7 @@ export class SpeechOutput {
     const source = this.context.createBufferSource();
     source.buffer = buffer;
     source.connect(this.context.destination);
+    if (this.recordingTap) source.connect(this.recordingTap);
     const start = Math.max(this.playhead, this.context.currentTime + 0.02);
     source.start(start);
     this.playhead = start + buffer.duration;
