@@ -448,23 +448,50 @@ export type Database = {
       // file with `supabase gen types` once applied.
       calls: {
         Row: {
+          agent_version_id: string | null
           caller_name: string
+          consent_outcome: string | null
+          duration_ms: number | null
+          ended_at: string | null
+          failure_reason: string | null
           id: string
+          language: string | null
           org_id: string
+          outcome: string | null
+          recording_allowed: boolean
+          sentiment: string | null
           started_at: string
           status: string
         }
         Insert: {
+          agent_version_id?: string | null
           caller_name?: string
+          consent_outcome?: string | null
+          duration_ms?: number | null
+          ended_at?: string | null
+          failure_reason?: string | null
           id?: string
+          language?: string | null
           org_id: string
+          outcome?: string | null
+          recording_allowed?: boolean
+          sentiment?: string | null
           started_at?: string
           status?: string
         }
         Update: {
+          agent_version_id?: string | null
           caller_name?: string
+          consent_outcome?: string | null
+          duration_ms?: number | null
+          ended_at?: string | null
+          failure_reason?: string | null
           id?: string
+          language?: string | null
           org_id?: string
+          outcome?: string | null
+          recording_allowed?: boolean
+          sentiment?: string | null
           started_at?: string
           status?: string
         }
@@ -668,6 +695,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      // transcripts, transcript_segments and recordings are hand-added
+      // (partial) from supabase/migrations/20261117100000_voice_platform.sql;
+      // regenerate this file with `supabase gen types` once applied.
+      transcripts: {
+        Row: { call_id: string; id: string; language: string | null; org_id: string; status: "pending" | "partial" | "final" | "failed" }
+        Insert: { call_id: string; id?: string; language?: string | null; org_id: string; status?: "pending" | "partial" | "final" | "failed" }
+        Update: { call_id?: string; id?: string; language?: string | null; org_id?: string; status?: "pending" | "partial" | "final" | "failed" }
+        Relationships: [{ foreignKeyName: "transcripts_call_id_fkey"; columns: ["call_id"]; isOneToOne: true; referencedRelation: "calls"; referencedColumns: ["id"] }]
+      }
+      transcript_segments: {
+        Row: { id: string; is_final: boolean; org_id: string; seq: number; speaker: "agent" | "caller" | "system"; start_ms: number; text: string; transcript_id: string }
+        Insert: { id?: string; is_final?: boolean; org_id: string; seq: number; speaker: "agent" | "caller" | "system"; start_ms?: number; text: string; transcript_id: string }
+        Update: { id?: string; is_final?: boolean; org_id?: string; seq?: number; speaker?: "agent" | "caller" | "system"; start_ms?: number; text?: string; transcript_id?: string }
+        Relationships: [{ foreignKeyName: "transcript_segments_transcript_id_fkey"; columns: ["transcript_id"]; isOneToOne: false; referencedRelation: "transcripts"; referencedColumns: ["id"] }]
+      }
+      recordings: {
+        Row: { bucket: string; call_id: string; duration_ms: number | null; format: string; id: string; object_path: string; org_id: string; status: "pending" | "uploaded" | "verified" | "failed" | "deleted" }
+        Insert: { bucket?: string; call_id: string; duration_ms?: number | null; format?: string; id?: string; object_path: string; org_id: string; status?: "pending" | "uploaded" | "verified" | "failed" | "deleted" }
+        Update: { bucket?: string; call_id?: string; duration_ms?: number | null; format?: string; id?: string; object_path?: string; org_id?: string; status?: "pending" | "uploaded" | "verified" | "failed" | "deleted" }
+        Relationships: [{ foreignKeyName: "recordings_call_id_fkey"; columns: ["call_id"]; isOneToOne: true; referencedRelation: "calls"; referencedColumns: ["id"] }]
       }
       profiles: {
         Row: {
