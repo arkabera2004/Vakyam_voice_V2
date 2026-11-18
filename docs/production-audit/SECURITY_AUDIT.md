@@ -77,4 +77,18 @@ Not a security vulnerability, but a correctness/availability risk worth recordin
 
 ### Not newly reviewed this pass
 Dependency audit (`npm audit`), CSP/header configuration, and the `.env` tracking question are unchanged from the original audit above; re-verify them before any deployment rather than assuming they still hold.
+
+## 8. 2026-11-18 addendum — complete-project master prompt security review
+
+### Finding: documented recording-playback rule was never actually enforced — fixed, commit `c7c62e8`
+`src/domain/roles.ts`'s `canPlayRecording()` has always documented that an agent may play back the recording of a call they personally started, in addition to reviewers. The storage RLS policy on the `recordings` bucket only ever checked `can_review_org()`, with no such exception — an agent could never actually hear their own call. Found by comparing the documented domain rule against the actually-enforced policy while reviewing the new signed-URL playback added to `CallReview.tsx` this session, rather than assuming the two agreed. `can_play_recording_object()` now mirrors the TypeScript rule exactly in SQL, and the storage policy uses it. 7 pgTAP assertions.
+
+### RLS and SECURITY DEFINER re-review
+Every table and function touched or added this session (`crm_integrations`, `crm_sync_jobs`, `consent_policies`, `retention_policies`, `pii_settings`, `deletion_requests`, `audit_log`, `approve_consent_policy`, `can_play_recording_object`) was re-checked against the same two invariants established in the §7 addendum: every table has RLS enabled (all were already covered by the original migrations; none of this session's work added a new table without one), and every `SECURITY DEFINER` function gates on the caller's role against the row's own `org_id` rather than a caller-supplied value. No further ambiguous-column instances were found in the three new functions added this session (`approve_consent_policy`, `guard_consent_policy_content`, `can_play_recording_object`) — all were written with the by-now-established convention of parameter names that never exactly match a column name, plus full table aliasing.
+
+### Client-side signed URL generation (CallReview.tsx)
+`supabase.storage.from(bucket).createSignedUrl(...)` is called unconditionally from the client for any call the screen loads; this is safe because the Storage API itself enforces `storage.objects` RLS using the caller's JWT — a caller without playback rights simply receives no signed URL (handled as "no recording" in the UI), rather than the client needing to pre-check permission itself. No client-side-only authorization exists here.
+
+### Not newly reviewed this pass (again)
+Dependency audit, CSP/headers, `.env` tracking, and anything not touched by this session's Tools/Compliance/Live-calls/Call-review/Agent-Studio work.
 - **Informational**: no auth bypass present; RLS correct on the one table; Azure keys never reach the browser.
