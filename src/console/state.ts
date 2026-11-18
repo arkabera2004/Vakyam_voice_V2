@@ -7,8 +7,6 @@ export type Source = { emoji: string; name: string; sub: string; live: boolean }
 export type AdapterStatus = "Connected" | "Not connected" | "Degraded 1 retry" | "Planned" | "Testing";
 
 export type ConsoleState = {
-  decided: Record<string, string>; // needs-you item id -> outcome
-  transfer: { state: "ringing" | "accepted" | "declined"; notes: string[] };
   calls: Record<number, { takenOver?: boolean; whisper?: boolean; barge?: boolean }>;
   reviewers: Record<number, string>;
   coaching: number[];
@@ -32,8 +30,6 @@ export type ConsoleState = {
 };
 
 export const DEFAULT_STATE: ConsoleState = {
-  decided: {},
-  transfer: { state: "ringing", notes: [] },
   calls: {},
   reviewers: { 4801: "Asha Nair", 4795: "Kavita Rao", 4783: "Asha Nair", 4768: "Kavita Rao" },
   coaching: [],

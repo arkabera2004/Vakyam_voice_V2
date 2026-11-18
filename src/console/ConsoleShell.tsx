@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { NAV } from "./nav";
 import { ROLE_LABEL } from "@/domain/roles";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useNeedsYou } from "@/hooks/useNeedsYou";
 import { Btn } from "./ui";
 
 const CRUMBS: Record<string, string> = {
@@ -104,14 +105,14 @@ export function ConsoleShell() {
   const { signOut } = useAuth();
   const { state, me, reset } = useConsole();
   const { unreadCount } = useNotifications();
+  const { transfersRinging, flaggedUnreviewed } = useNeedsYou();
   const roleLine = me.role ? `${ROLE_LABEL[me.role]} · ${me.orgName ?? "organisation"}` : "No organisation yet";
   const liveId = Number(pathname.split("/console/live/")[1]);
   const liveCall = LIVE_CALLS.find((c) => c.id === liveId);
   const crumb = CRUMBS[pathname] ?? (liveCall ? `Live calls / Call ${liveCall.id}, ${liveCall.name}` : "Console");
-  // Badges follow what the supervisor has already handled.
-  const transfersOpen = state.transfer.state === "ringing" ? 3 : 2;
-  const homeOpen = 3 + ["refund-5521", "upgrade-anita", "holds"].filter((id) => !state.decided[id]).length + (state.transfer.state === "ringing" ? 1 : 0);
-  const badge = (to: string, fallback?: string) => (to === "/console" ? String(homeOpen) : to === "/console/transfers" ? String(transfersOpen) : to === "/console/studio" ? state.liveVersion : fallback);
+  // Home and Warm transfers badges follow the real queue (useNeedsYou); the rest stay demo.
+  const homeOpen = transfersRinging + flaggedUnreviewed.length;
+  const badge = (to: string, fallback?: string) => (to === "/console" ? String(homeOpen) : to === "/console/transfers" ? String(transfersRinging) : to === "/console/studio" ? state.liveVersion : fallback);
   const resetDemo = () => {
     if (!window.confirm("Reset the demo? Every decision, toggle and audit entry you made in this browser goes back to the starting state.")) return;
     reset();
