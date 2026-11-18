@@ -206,6 +206,20 @@ Replaced the fictional warm-transfer demo (invented handoff summary, scripted Hi
 
 Baseline: 24 test files, 95 unit tests, tsc clean, eslint 0 warnings, build passes.
 
+## 2026-11-18 — Home's "Needs you" queue, designed with the product owner
+
+| Date | Phase | SHA | Message | Changed | Tests | Result | Push |
+|---|---|---|---|---|---|---|---|
+| 2026-11-18 | — | `2e390fb` | feat(console): Home's "Needs you" queue shows only real approvals | `Home.tsx`, `useNeedsYou.ts` (new), `ConsoleShell.tsx`, `state.ts` | tsc, eslint, `vitest run`, `npm run build` | 95/95 | `git ls-remote v2` = `2e390fb` |
+
+### Design decision, made with the product owner before writing any code
+Asked directly: should this pass build a new case-level `approvals` table to represent refund/upgrade/hold-extension decisions (none of which the realtime agent can raise today, since it has no tool-calling — `GAP-B-02`), or only surface what's already real? The product owner chose the latter. So the fictional refund/upgrade/hold-extension items the old demo invented here are dropped entirely, not replaced with a table that would sit empty until tool-calling exists. "Needs you" now shows exactly two real signals: ringing `transfers` rows and `evaluations` flagged but not yet reviewed, via a new shared `useNeedsYou()` hook. The same hook now drives ConsoleShell's sidebar badges for Home and Warm transfers, which had been silently reading from the `decided`/`transfer` console-store fields — dead since the WarmTransfer.tsx rewrite a few commits back, so those badges had been frozen on stale demo numbers without anyone noticing. Removed `decided` and `transfer` from the demo store's type and defaults, since nothing reads either any more.
+
+### Deliberately not attempted this pass
+Dashboard KPIs (calls today, contained %, average handle time, AI cost per call), the language-mix donut and the handoff-reason breakdown on Home are still fabricated fleet-wide numbers. A real version needs the same per-org aggregation approach already used for Live calls, which is a larger, separate piece of work than the approval queue and was out of scope for this decision.
+
+Baseline: 24 test files, 95 unit tests, tsc clean, eslint 0 warnings, build passes.
+
 ## 2026-11-18 — Knowledge wired to real sources, policy gates and versions
 
 | Date | Phase | SHA | Message | Changed | Tests | Result | Push |

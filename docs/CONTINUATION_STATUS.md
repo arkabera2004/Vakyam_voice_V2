@@ -196,6 +196,12 @@ Replaced the fictional handoff summary, scripted call turns, fake tool trace and
 
 Baseline: 24 test files, 95 unit tests, tsc clean, eslint 0 warnings, build passes.
 
+### Home's "Needs you" queue, designed with the product owner (commit `2e390fb`)
+
+Asked the product owner directly whether to build a new case-level `approvals` table for refund/upgrade/hold-extension decisions, since none of those can be raised by a live call today (no tool-calling on the realtime agent — `GAP-B-02`). They chose to drop those fictional items entirely rather than build a table nothing can populate yet. "Needs you" now shows exactly two real signals via a new shared `useNeedsYou()` hook: ringing `transfers` and flagged `evaluations` awaiting review. The same hook now drives ConsoleShell's sidebar badges, which had quietly been reading from console-store fields (`decided`, `transfer`) that went dead a few commits earlier when WarmTransfer.tsx moved to real data — those fields are now removed. Home's dashboard KPIs, language mix and handoff-reason breakdown remain demo; they need the same per-org aggregation work already done for Live calls, out of scope for this decision.
+
+Baseline: 24 test files, 95 unit tests, tsc clean, eslint 0 warnings, build passes.
+
 ### Knowledge wired to real sources, policy gates and versions (commit `e8f45c0`)
 
 `knowledge_sources`, `policy_gates` and `knowledge_versions` were already seeded 1:1 with the old demo constants, so this was a direct swap: real reads/writes under the existing editors RLS tier, logged to the real audit log. The gate toggle, source list and "Ask Meera a policy question" tester (a deterministic pure function, now explicitly labelled as a test harness rather than live AI) all run against real data. Dropped the invented "resort inventory" panel and the draft/dirty/publish gating, since neither is backed by the real schema. Still open: a live call does not yet look up its org's gates or sources at runtime — that needs the realtime agent's tool-calling wired up, separate and larger scope.
@@ -209,9 +215,12 @@ Baseline: 24 test files, 95 unit tests, tsc clean, eslint 0 warnings, build pass
 3. Design (with the product owner) what actually raises a `transfers` row during a live call — no UI action or realtime-agent tool does today, so the screen just wired stays empty until that exists.
 4. Design (with the product owner or an engineer with time to build the realtime-agent tool-calling layer) how a live call would actually consult `policy_gates`/`knowledge_sources` at runtime — today only the admin UI is real; nothing in a call reads them yet.
 5. `Analytics.tsx` remains demo data by explicit instruction: several widgets (language-mix donut, cost-per-model table) don't map onto the existing schema without inventing a pricing/rate table, which is a product decision, not plumbing.
-6. `Home.tsx`'s approval queue needs a real product decision (what approval types exist, what thresholds, who approves) before any schema or UI work makes sense.
+6. `Home.tsx`'s dashboard KPIs, language mix and handoff-reason breakdown need the same per-org aggregation approach already used for Live calls; its approval queue itself is now resolved — see below.
 7. `Routing.tsx` remains telephony-dependent and out of scope; see `docs/production-audit/PRODUCTION_GAP_REGISTER.md` for the reasoning.
 8. Caller-side (member's) transcript turns need Azure Realtime's `input_audio_transcription` requested in the session config — a live-Azure-only change not verifiable in this environment.
+
+### Resolved: Home.tsx's approval queue
+Asked the product owner directly: build a new case-level `approvals` table now (even though nothing in a live call can raise one yet), or only surface what's already real? They chose the latter — see the "Home's 'Needs you' queue" entry above. If a case-level approvals workflow (refund/upgrade/hold-extension) is wanted later, it still needs: a generic `approvals` table (type, payload, amount, status, decided_by), a decision on whether its thresholds read from the real `policy_gates` table (the product owner's preference, when this is revisited) or stay separate, and — the larger piece — tool-calling on the realtime agent so a live call can actually create a row (`GAP-B-02`).
 
 ## External blockers (need the product owner)
 
