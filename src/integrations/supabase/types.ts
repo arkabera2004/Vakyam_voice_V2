@@ -132,6 +132,104 @@ export type Database = {
           },
         ]
       }
+      // crm_integrations and crm_sync_jobs are hand-added from
+      // supabase/migrations/20261117100000_voice_platform.sql; regenerate
+      // this file with `supabase gen types` once applied.
+      crm_integrations: {
+        Row: {
+          config: Json
+          created_at: string
+          credential_ref: string | null
+          id: string
+          last_error: string | null
+          last_test_at: string | null
+          last_test_ok: boolean | null
+          name: string
+          org_id: string
+          provider_key: string
+          status: "disabled" | "enabled" | "error"
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          credential_ref?: string | null
+          id?: string
+          last_error?: string | null
+          last_test_at?: string | null
+          last_test_ok?: boolean | null
+          name: string
+          org_id: string
+          provider_key: string
+          status?: "disabled" | "enabled" | "error"
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          credential_ref?: string | null
+          id?: string
+          last_error?: string | null
+          last_test_at?: string | null
+          last_test_ok?: boolean | null
+          name?: string
+          org_id?: string
+          provider_key?: string
+          status?: "disabled" | "enabled" | "error"
+        }
+        Relationships: []
+      }
+      crm_sync_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          idempotency_key: string
+          integration_id: string
+          last_error: string | null
+          next_attempt_at: string
+          org_id: string
+          payload: Json
+          status: "queued" | "running" | "succeeded" | "failed" | "dead"
+          trigger: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          idempotency_key: string
+          integration_id: string
+          last_error?: string | null
+          next_attempt_at?: string
+          org_id: string
+          payload?: Json
+          status?: "queued" | "running" | "succeeded" | "failed" | "dead"
+          trigger: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          idempotency_key?: string
+          integration_id?: string
+          last_error?: string | null
+          next_attempt_at?: string
+          org_id?: string
+          payload?: Json
+          status?: "queued" | "running" | "succeeded" | "failed" | "dead"
+          trigger?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_sync_jobs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "crm_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       // agents and agent_versions are hand-added (partial: only the columns
       // Agent Studio reads or writes) from
       // supabase/migrations/20261116150000_domain_schema.sql; regenerate
@@ -515,6 +613,10 @@ export type Database = {
       agent_version_score_summary: {
         Args: { target_agent_id: string }
         Returns: { version: string; average_score: number; evaluation_count: number }[]
+      }
+      enqueue_crm_sync: {
+        Args: { integ_id: string; sync_trigger: string; sync_payload?: Json; sync_idempotency_key?: string | null }
+        Returns: Database["public"]["Tables"]["crm_sync_jobs"]["Row"]
       }
     }
     Enums: {
