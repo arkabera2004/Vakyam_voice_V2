@@ -132,6 +132,236 @@ export type Database = {
           },
         ]
       }
+      // calls, evaluation_templates, evaluation_criteria, evaluations and
+      // evaluation_scores are hand-added (partial: only the columns the QA
+      // Scorecards screen reads or writes) from
+      // supabase/migrations/20261116150000_domain_schema.sql,
+      // 20261117100000_voice_platform.sql and
+      // 20261118130000_evaluation_review_assignment.sql; regenerate this
+      // file with `supabase gen types` once applied.
+      calls: {
+        Row: {
+          caller_name: string
+          id: string
+          org_id: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          caller_name?: string
+          id?: string
+          org_id: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          caller_name?: string
+          id?: string
+          org_id?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      evaluation_templates: {
+        Row: {
+          id: string
+          name: string
+          org_id: string
+          pass_threshold: number
+          status: "draft" | "active" | "retired"
+          version: number
+        }
+        Insert: {
+          id?: string
+          name: string
+          org_id: string
+          pass_threshold?: number
+          status?: "draft" | "active" | "retired"
+          version: number
+        }
+        Update: {
+          id?: string
+          name?: string
+          org_id?: string
+          pass_threshold?: number
+          status?: "draft" | "active" | "retired"
+          version?: number
+        }
+        Relationships: []
+      }
+      evaluation_criteria: {
+        Row: {
+          id: string
+          name: string
+          org_id: string
+          position: number
+          template_id: string
+          weight: number
+        }
+        Insert: {
+          id?: string
+          name: string
+          org_id: string
+          position?: number
+          template_id: string
+          weight: number
+        }
+        Update: {
+          id?: string
+          name?: string
+          org_id?: string
+          position?: number
+          template_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluation_criteria_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "evaluation_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluations: {
+        Row: {
+          assigned_reviewer_id: string | null
+          call_id: string
+          completed_at: string | null
+          created_at: string
+          flagged: boolean
+          id: string
+          org_id: string
+          overall_score: number | null
+          status: "queued" | "running" | "completed" | "failed"
+          template_id: string
+        }
+        Insert: {
+          assigned_reviewer_id?: string | null
+          call_id: string
+          completed_at?: string | null
+          created_at?: string
+          flagged?: boolean
+          id?: string
+          org_id: string
+          overall_score?: number | null
+          status?: "queued" | "running" | "completed" | "failed"
+          template_id: string
+        }
+        Update: {
+          assigned_reviewer_id?: string | null
+          call_id?: string
+          completed_at?: string | null
+          created_at?: string
+          flagged?: boolean
+          id?: string
+          org_id?: string
+          overall_score?: number | null
+          status?: "queued" | "running" | "completed" | "failed"
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluations_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "evaluation_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluation_scores: {
+        Row: {
+          criterion_id: string
+          evaluation_id: string
+          id: string
+          org_id: string
+          rationale: string
+          score: number
+        }
+        Insert: {
+          criterion_id: string
+          evaluation_id: string
+          id?: string
+          org_id: string
+          rationale?: string
+          score: number
+        }
+        Update: {
+          criterion_id?: string
+          evaluation_id?: string
+          id?: string
+          org_id?: string
+          rationale?: string
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluation_scores_criterion_id_fkey"
+            columns: ["criterion_id"]
+            isOneToOne: false
+            referencedRelation: "evaluation_criteria"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluation_scores_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluation_reviews: {
+        Row: {
+          comment: string
+          created_at: string
+          evaluation_id: string
+          id: string
+          org_id: string
+          override_overall: number | null
+          override_scores: Json | null
+          reviewer_id: string
+        }
+        Insert: {
+          comment?: string
+          created_at?: string
+          evaluation_id: string
+          id?: string
+          org_id: string
+          override_overall?: number | null
+          override_scores?: Json | null
+          reviewer_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          evaluation_id?: string
+          id?: string
+          org_id?: string
+          override_overall?: number | null
+          override_scores?: Json | null
+          reviewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluation_reviews_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -167,6 +397,26 @@ export type Database = {
       set_member_status: {
         Args: { org: string; member: string; new_status: string }
         Returns: Database["public"]["Tables"]["org_members"]["Row"]
+      }
+      submit_evaluation: {
+        Args: { call_id: string; template_id: string; scores: Json; idempotency_key: string }
+        Returns: Database["public"]["Tables"]["evaluations"]["Row"]
+      }
+      add_evaluation_review: {
+        Args: { evaluation_id: string; comment?: string; override_overall?: number | null; override_scores?: Json | null }
+        Returns: {
+          id: string
+          evaluation_id: string
+          reviewer_id: string
+          comment: string
+          override_overall: number | null
+          override_scores: Json | null
+          created_at: string
+        }
+      }
+      assign_evaluation_reviewer: {
+        Args: { target_evaluation_id: string; new_reviewer_id?: string | null }
+        Returns: Database["public"]["Tables"]["evaluations"]["Row"]
       }
     }
     Enums: {
