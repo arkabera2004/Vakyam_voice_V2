@@ -164,13 +164,16 @@ No product decision was needed for this phase: the draft/published model (a poin
 
 Baseline: **23 test files, 85 unit tests, tsc clean, eslint 0 warnings, build passes.** 4 new pgTAP assertions files/additions since the last report, none executed (Docker still deferred).
 
+### Cross-version QA comparison (commits `871d263`, `1624be0`)
+
+Closed the gap the Agent Studio rewrite left open: `agent_version_score_summary()` averages `evaluations.overall_score` grouped by `calls.agent_version_id` for one agent, server-side (plain PostgREST cannot express a GROUP BY), excluding a call with no evaluation and an evaluation still mid-flight (`overall_score IS NULL`) rather than treating either as a zero. "Compare scores" in Agent Studio's Versions panel renders it as a plain table. Read-only to any org member. No new schema, no product decision — both columns it joins already existed from earlier work; this was purely the aggregation query itself. 8 new pgTAP assertions, not executed (Docker still deferred).
+
 ## Exact next implementation task
 
 1. Once Docker (or Supabase CLI access) is available: `supabase db reset` + `supabase test db` to execute all pgTAP files for real; fix anything they reveal.
 2. Design (with the product owner) how explicit verbal consent is captured in a voice-only interface, then wire it.
 3. Recording upload: `MediaRecorder` on the browser's local/remote audio, private bucket upload, `recordings` metadata row, gated by `calls.recording_allowed`.
 4. Analytics.tsx remains demo data: several of its widgets (language-mix donut, cost-per-model table) don't map onto the existing schema without inventing a pricing/rate table, which is a product decision, not plumbing.
-5. A real cross-version QA comparison (average `evaluations.overall_score` grouped by `calls.agent_version_id`) would close the gap left by dropping Agent Studio's old fictional compare table — a genuine, buildable enhancement, not attempted this pass for time.
 
 ## External blockers (need the product owner)
 

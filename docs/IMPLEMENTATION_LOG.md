@@ -145,3 +145,12 @@ Replaced QAScorecards.tsx's fictional per-prompt-version heatmap, fixed flagged-
 
 ### Product decision still needed
 None for this phase — the draft/published model, immutability, and voice-label mapping were all resolvable from the existing architecture without new input.
+
+## 2026-11-18 — Cross-version QA comparison
+
+| Date | Phase | SHA | Message | Changed | Tests | Result | Push |
+|---|---|---|---|---|---|---|---|
+| 2026-11-18 | — | `871d263` | feat(db): agent_version_score_summary() for cross-version QA comparison | `20261118150000_agent_version_score_summary.sql`, `agent_version_score_summary.test.sql` | SQL parse only; pgTAP NOT executed | 8 assertions written | `git ls-remote v2` = `871d263` |
+| 2026-11-18 | — | `1624be0` | feat(console): real cross-version QA comparison in Agent Studio | `types.ts`, `AgentStudio.tsx` | tsc, eslint, `vitest run`, `npm run build` | 85/85 | `git ls-remote v2` = `1624be0` |
+
+Replaces the fictional "compare v7 with v6" table Agent Studio's rewrite had intentionally dropped (see above) with a real one: `agent_version_score_summary()` averages `evaluations.overall_score` grouped by `calls.agent_version_id`, excluding a call with no evaluation yet and an evaluation whose `overall_score` is still NULL (in progress) rather than counting either as a zero. Read-only to any org member, since it exposes nothing not already visible by reading the underlying tables directly. "Compare scores" in the Versions panel renders it as a plain table, live version highlighted the same way the versions list already does. No product decision was needed; no new schema either, since `calls.agent_version_id` and `evaluations.overall_score` already existed from earlier session work — this was purely an aggregation query that plain PostgREST cannot express.
