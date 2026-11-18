@@ -205,3 +205,15 @@ Baseline throughout: 24 test files, 95 unit tests, tsc clean, eslint 0 warnings,
 Replaced the fictional warm-transfer demo (invented handoff summary, scripted Hindi/English call turns, a fake tool trace, fabricated "active holds") with the real `transfers` table, joined to its `calls` row for caller name, tier and language. Accept, decline and add-note all write to the real `state`/`notes` columns under the already-existing editors-write RLS tier (supervisor and above) — no new SQL function was needed, since plain column updates are sufficient and already permitted. Also fixed a real gap found along the way: the hand-maintained `calls` type in `types.ts` was missing `caller_tier`, even though the column exists in the schema; added it. Nothing in the call flow creates a transfer row yet (no UI action or realtime-agent tool raises one), so the screen's honest common state is empty rather than a permanently-populated fake queue — this remains open, tracked as before.
 
 Baseline: 24 test files, 95 unit tests, tsc clean, eslint 0 warnings, build passes.
+
+## 2026-11-18 — Knowledge wired to real sources, policy gates and versions
+
+| Date | Phase | SHA | Message | Changed | Tests | Result | Push |
+|---|---|---|---|---|---|---|---|
+| 2026-11-18 | — | `e8f45c0` | feat(console): wire Knowledge to real sources, policy gates and versions | `Knowledge.tsx`, `types.ts` | tsc, eslint, `vitest run`, `npm run build` | 95/95 | `git ls-remote v2` = `e8f45c0` |
+
+Replaced the localStorage-backed knowledge sources, gate toggles and draft/publish workflow with real reads and writes against `knowledge_sources`, `policy_gates` and `knowledge_versions` — all already seeded 1:1 with the old demo constants, so this was a direct swap rather than a redesign. Mutations write under the existing editors RLS tier and log to the real audit log via `log_audit()`. "Ask Meera a policy question" keeps `answerPolicy()` as a deterministic pure-function test harness (now explicitly labelled as one, not a live AI call) running against the real gate states. Dropped, not faked: the old "resort inventory, live lookup" panel's invented room-count numbers and sync timestamp, since no `check_availability` tool exists on the realtime agent (`GAP-B-02`, still open); and the old draft/dirty/publish gating, since the real schema has no draft column — a toggle or a new source takes effect immediately, same as every other RLS-backed screen this session, and "Save snapshot" only records a version label for history.
+
+Still open: these tables are not consumed by the actual agent prompt pipeline at call time — a live call does not look up its org's gates or sources yet. That remains a separate, larger piece of work (wiring the realtime agent's tool calls), not attempted this pass.
+
+Baseline: 24 test files, 95 unit tests, tsc clean, eslint 0 warnings, build passes.
