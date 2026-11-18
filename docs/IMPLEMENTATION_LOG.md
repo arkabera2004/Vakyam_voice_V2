@@ -195,3 +195,13 @@ Baseline throughout: 23 test files, 85 unit tests, tsc clean, eslint 0 warnings,
 `WarmTransfer.tsx` still has no real trigger that creates a `transfers` row (no UI or call-flow does), so its read side has not yet been wired — it is next. `Routing.tsx` remains telephony-dependent and out of scope. `Knowledge.tsx`'s tables are still not consumed by the actual agent prompt pipeline. `Home.tsx`'s approval queue and `Analytics.tsx`'s invented-pricing widgets still need a product decision before any schema or UI work is appropriate. Caller-side transcript turns still need a live-Azure-only session-config change not verifiable in this environment.
 
 Baseline throughout: 24 test files, 95 unit tests, tsc clean, eslint 0 warnings, build passes. No pgTAP executed (Docker deferred per explicit instruction).
+
+## 2026-11-18 — WarmTransfer wired to the real transfers table
+
+| Date | Phase | SHA | Message | Changed | Tests | Result | Push |
+|---|---|---|---|---|---|---|---|
+| 2026-11-18 | — | `f38e813` | feat(console): wire WarmTransfer to the real transfers table | `WarmTransfer.tsx`, `types.ts` | tsc, eslint, `vitest run`, `npm run build` | 95/95 | `git ls-remote v2` = `f38e813` |
+
+Replaced the fictional warm-transfer demo (invented handoff summary, scripted Hindi/English call turns, a fake tool trace, fabricated "active holds") with the real `transfers` table, joined to its `calls` row for caller name, tier and language. Accept, decline and add-note all write to the real `state`/`notes` columns under the already-existing editors-write RLS tier (supervisor and above) — no new SQL function was needed, since plain column updates are sufficient and already permitted. Also fixed a real gap found along the way: the hand-maintained `calls` type in `types.ts` was missing `caller_tier`, even though the column exists in the schema; added it. Nothing in the call flow creates a transfer row yet (no UI action or realtime-agent tool raises one), so the screen's honest common state is empty rather than a permanently-populated fake queue — this remains open, tracked as before.
+
+Baseline: 24 test files, 95 unit tests, tsc clean, eslint 0 warnings, build passes.

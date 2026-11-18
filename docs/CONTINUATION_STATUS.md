@@ -190,11 +190,17 @@ Three more items moved from the remaining-work list to real:
 
 Baseline: **24 test files, 95 unit tests, tsc clean, eslint 0 warnings, build passes.** Two more pgTAP files written (`recording_upload`, `notifications`), plus a publication-only migration with no pgTAP file (membership isn't meaningfully testable that way) — Docker remains deferred per explicit instruction.
 
+### WarmTransfer wired to the real transfers table (commit `f38e813`)
+
+Replaced the fictional handoff summary, scripted call turns, fake tool trace and fabricated "active holds" with the real `transfers` table joined to `calls` for caller context. Accept/decline/add-note write directly to `transfers.state`/`transfers.notes` under the already-existing editors RLS tier — no new SQL function needed. Fixed a real gap in `types.ts` along the way: the hand-maintained `calls` type was missing `caller_tier`. Nothing in the call flow creates a transfer row yet, so the honest common state is empty.
+
+Baseline: 24 test files, 95 unit tests, tsc clean, eslint 0 warnings, build passes.
+
 ## Exact next implementation task
 
 1. Once Docker (or Supabase CLI access) is available: `supabase db reset` + `supabase test db` to execute all pgTAP files for real; fix anything they reveal.
 2. Design (with the product owner) how explicit verbal consent is captured in a voice-only interface, then wire it.
-3. `WarmTransfer.tsx`: `transfers` table exists but nothing creates a row yet; wire the read side with an honest empty state, same pattern as every other screen this session.
+3. Design (with the product owner) what actually raises a `transfers` row during a live call — no UI action or realtime-agent tool does today, so the screen just wired stays empty until that exists.
 4. `Analytics.tsx` remains demo data by explicit instruction: several widgets (language-mix donut, cost-per-model table) don't map onto the existing schema without inventing a pricing/rate table, which is a product decision, not plumbing.
 5. `Home.tsx`'s approval queue needs a real product decision (what approval types exist, what thresholds, who approves) before any schema or UI work makes sense.
 6. `Routing.tsx` (telephony-dependent, out of scope) and `Knowledge.tsx` (not consumed by the actual agent prompt pipeline) remain demo; see `docs/production-audit/PRODUCTION_GAP_REGISTER.md` for the per-screen reasoning.
