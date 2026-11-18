@@ -132,6 +132,96 @@ export type Database = {
           },
         ]
       }
+      // agents and agent_versions are hand-added (partial: only the columns
+      // Agent Studio reads or writes) from
+      // supabase/migrations/20261116150000_domain_schema.sql; regenerate
+      // this file with `supabase gen types` once applied.
+      agents: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          live_version: string | null
+          name: string
+          org_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          live_version?: string | null
+          name: string
+          org_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          live_version?: string | null
+          name?: string
+          org_id?: string
+        }
+        Relationships: []
+      }
+      agent_versions: {
+        Row: {
+          agent_id: string
+          created_at: string
+          created_by: string | null
+          dictionary: Json
+          first_message: string
+          id: string
+          org_id: string
+          persona_handoff: string
+          persona_tone: string
+          prompt: string
+          speed: number
+          version: string
+          voice: string
+          warmth: number
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          created_by?: string | null
+          dictionary?: Json
+          first_message?: string
+          id?: string
+          org_id: string
+          persona_handoff?: string
+          persona_tone?: string
+          prompt?: string
+          speed?: number
+          version: string
+          voice?: string
+          warmth?: number
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          created_by?: string | null
+          dictionary?: Json
+          first_message?: string
+          id?: string
+          org_id?: string
+          persona_handoff?: string
+          persona_tone?: string
+          prompt?: string
+          speed?: number
+          version?: string
+          voice?: string
+          warmth?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_versions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       // calls, evaluation_templates, evaluation_criteria, evaluations and
       // evaluation_scores are hand-added (partial: only the columns the QA
       // Scorecards screen reads or writes) from
@@ -417,6 +507,10 @@ export type Database = {
       assign_evaluation_reviewer: {
         Args: { target_evaluation_id: string; new_reviewer_id?: string | null }
         Returns: Database["public"]["Tables"]["evaluations"]["Row"]
+      }
+      publish_agent_version: {
+        Args: { target_agent_id: string; target_version: string }
+        Returns: Database["public"]["Tables"]["agents"]["Row"]
       }
     }
     Enums: {
