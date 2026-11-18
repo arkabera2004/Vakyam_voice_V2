@@ -132,6 +132,125 @@ export type Database = {
           },
         ]
       }
+      // consent_policies, retention_policies, pii_settings, deletion_requests
+      // and audit_log are hand-added from
+      // supabase/migrations/20261116150000_domain_schema.sql and
+      // 20261117100000_voice_platform.sql; regenerate this file with
+      // `supabase gen types` once applied.
+      consent_policies: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          disclosure_text: string
+          id: string
+          org_id: string
+          requires_explicit_consent: boolean
+          status: "draft" | "approved" | "retired"
+          version: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          disclosure_text: string
+          id?: string
+          org_id: string
+          requires_explicit_consent?: boolean
+          status?: "draft" | "approved" | "retired"
+          version: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          disclosure_text?: string
+          id?: string
+          org_id?: string
+          requires_explicit_consent?: boolean
+          status?: "draft" | "approved" | "retired"
+          version?: number
+        }
+        Relationships: []
+      }
+      retention_policies: {
+        Row: {
+          deletion_enabled: boolean
+          org_id: string
+          retain_days: number
+          target: "recording" | "transcript"
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          deletion_enabled?: boolean
+          org_id: string
+          retain_days?: number
+          target: "recording" | "transcript"
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          deletion_enabled?: boolean
+          org_id?: string
+          retain_days?: number
+          target?: "recording" | "transcript"
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      pii_settings: {
+        Row: { field: string; org_id: string; redact: boolean }
+        Insert: { field: string; org_id: string; redact?: boolean }
+        Update: { field?: string; org_id?: string; redact?: boolean }
+        Relationships: []
+      }
+      deletion_requests: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          id: string
+          member_id: string | null
+          member_name: string
+          org_id: string
+          reason: string
+          ref: string
+          requested_by: string | null
+          status: "open" | "closed"
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          member_id?: string | null
+          member_name: string
+          org_id: string
+          reason: string
+          ref: string
+          requested_by?: string | null
+          status?: "open" | "closed"
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          member_id?: string | null
+          member_name?: string
+          org_id?: string
+          reason?: string
+          ref?: string
+          requested_by?: string | null
+          status?: "open" | "closed"
+        }
+        Relationships: []
+      }
+      audit_log: {
+        Row: { actor_id: string | null; actor_name: string; change: string; created_at: string; id: number; org_id: string; version: string }
+        Insert: { actor_id?: string | null; actor_name: string; change: string; created_at?: string; id?: number; org_id: string; version?: string }
+        Update: { actor_id?: string | null; actor_name?: string; change?: string; created_at?: string; id?: number; org_id?: string; version?: string }
+        Relationships: []
+      }
       // crm_integrations and crm_sync_jobs are hand-added from
       // supabase/migrations/20261117100000_voice_platform.sql; regenerate
       // this file with `supabase gen types` once applied.
@@ -617,6 +736,14 @@ export type Database = {
       enqueue_crm_sync: {
         Args: { integ_id: string; sync_trigger: string; sync_payload?: Json; sync_idempotency_key?: string | null }
         Returns: Database["public"]["Tables"]["crm_sync_jobs"]["Row"]
+      }
+      approve_consent_policy: {
+        Args: { target_policy_id: string }
+        Returns: Database["public"]["Tables"]["consent_policies"]["Row"]
+      }
+      log_audit: {
+        Args: { org: string; change: string; version?: string }
+        Returns: Database["public"]["Tables"]["audit_log"]["Row"]
       }
     }
     Enums: {
