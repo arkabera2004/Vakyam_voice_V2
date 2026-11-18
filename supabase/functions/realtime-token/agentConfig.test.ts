@@ -22,7 +22,8 @@ describe("resolveAgentConfig", () => {
       firstMessage: FIRST_MESSAGE,
       instructions: INSTRUCTIONS,
       textInstructions: TEXT_INSTRUCTIONS,
-      voiceOverride: undefined,
+      speechVoiceOverride: undefined,
+      realtimeVoiceOverride: undefined,
     });
     expect(resolveAgentConfig(undefined)).toEqual(resolveAgentConfig(null));
   });
@@ -41,9 +42,26 @@ describe("resolveAgentConfig", () => {
     expect(custom.firstMessage).toBe("Hello there!");
   });
 
-  it("only overrides the voice with a real Azure voice identifier, not a cosmetic label", () => {
-    expect(resolveAgentConfig({ prompt: null, first_message: null, voice: "en-IN-AartiIndicNeural" }).voiceOverride).toBe("en-IN-AartiIndicNeural");
-    expect(resolveAgentConfig({ prompt: null, first_message: null, voice: "aarti" }).voiceOverride).toBeUndefined();
-    expect(resolveAgentConfig({ prompt: null, first_message: null, voice: null }).voiceOverride).toBeUndefined();
+  it("passes a real Azure voice identifier straight through as the speech override", () => {
+    const resolved = resolveAgentConfig({ prompt: null, first_message: null, voice: "en-IN-AartiIndicNeural" });
+    expect(resolved.speechVoiceOverride).toBe("en-IN-AartiIndicNeural");
+    expect(resolved.realtimeVoiceOverride).toBeUndefined();
+  });
+
+  it("maps the Studio's 'aarti' label to the real Azure Speech voice it stands for", () => {
+    const resolved = resolveAgentConfig({ prompt: null, first_message: null, voice: "aarti" });
+    expect(resolved.speechVoiceOverride).toBe("en-IN-AartiIndicNeural");
+    expect(resolved.realtimeVoiceOverride).toBeUndefined();
+  });
+
+  it("passes a known gpt-realtime voice name through as the realtime override, not the speech one", () => {
+    const resolved = resolveAgentConfig({ prompt: null, first_message: null, voice: "marin" });
+    expect(resolved.realtimeVoiceOverride).toBe("marin");
+    expect(resolved.speechVoiceOverride).toBeUndefined();
+  });
+
+  it("leaves both overrides undefined for an unrecognised or missing voice value", () => {
+    expect(resolveAgentConfig({ prompt: null, first_message: null, voice: "some-unknown-voice" })).toMatchObject({ speechVoiceOverride: undefined, realtimeVoiceOverride: undefined });
+    expect(resolveAgentConfig({ prompt: null, first_message: null, voice: null })).toMatchObject({ speechVoiceOverride: undefined, realtimeVoiceOverride: undefined });
   });
 });

@@ -79,8 +79,8 @@ serve(async (req) => {
       }
     }
     const agentConfig = resolveAgentConfig(agentVersion);
-    const voice = agentConfig.voiceOverride || Deno.env.get("AZURE_REALTIME_VOICE") || "marin";
-    const speechVoice = agentConfig.voiceOverride || Deno.env.get("AZURE_SPEECH_VOICE") || "en-IN-AartiIndicNeural";
+    const voice = agentConfig.realtimeVoiceOverride || Deno.env.get("AZURE_REALTIME_VOICE") || "marin";
+    const speechVoice = agentConfig.speechVoiceOverride || Deno.env.get("AZURE_SPEECH_VOICE") || "en-IN-AartiIndicNeural";
 
     // Rate limit per user, counted and recorded with the caller's own JWT
     // under RLS on public.voice_sessions (GAP-S-02).
