@@ -26,6 +26,7 @@ type AgentVersion = {
   createdAt: string;
 };
 type Draft = { prompt: string; firstMessage: string; voice: string; speed: number; warmth: number; personaTone: string; personaHandoff: string; dictionary: [string, string][] };
+type VersionScore = { version: string; averageScore: number; evaluationCount: number };
 
 const SAMPLE = "Namaste, main Meera bol rahi hoon. Kumbhalgarh mein aapke liye ek Studio available hai.";
 const EMPTY_DRAFT: Draft = { prompt: "", firstMessage: "", voice: "aarti", speed: 1.05, warmth: 70, personaTone: "", personaHandoff: "", dictionary: [] };
@@ -59,12 +60,15 @@ export default function AgentStudio() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [modal, setModal] = useState<null | "newAgent" | "editAgent" | "newVersion" | "viewVersion">(null);
+  const [modal, setModal] = useState<null | "newAgent" | "editAgent" | "newVersion" | "viewVersion" | "compareVersions">(null);
   const [agentForm, setAgentForm] = useState({ name: "", description: "" });
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [draftWord, setDraftWord] = useState({ written: "", spoken: "" });
   const [viewing, setViewing] = useState<AgentVersion | null>(null);
   const [busy, setBusy] = useState(false);
+  const [scores, setScores] = useState<VersionScore[]>([]);
+  const [scoresLoading, setScoresLoading] = useState(false);
+  const [scoresError, setScoresError] = useState<string | null>(null);
 
   const selected = agents.find((a) => a.id === selectedId) ?? null;
   const live = versions.find((v) => v.version === selected?.liveVersion) ?? null;
@@ -168,6 +172,17 @@ export default function AgentStudio() {
     void load();
   };
 
+  const openCompareVersions = async () => {
+    if (!selected) return;
+    setModal("compareVersions");
+    setScoresLoading(true);
+    setScoresError(null);
+    const { data, error } = await supabase.rpc("agent_version_score_summary", { target_agent_id: selected.id });
+    setScoresLoading(false);
+    if (error) return setScoresError(error.message);
+    setScores((data ?? []).map((r) => ({ version: r.version, averageScore: r.average_score, evaluationCount: r.evaluation_count })));
+  };
+
   const openNewVersion = () => {
     setDraft(live ? { prompt: live.prompt, firstMessage: live.firstMessage, voice: live.voice, speed: live.speed, warmth: live.warmth, personaTone: live.personaTone, personaHandoff: live.personaHandoff, dictionary: live.dictionary } : EMPTY_DRAFT);
     setModal("newVersion");
@@ -234,7 +249,7 @@ export default function AgentStudio() {
             </Panel>
 
             <Panel>
-              <PanelHeader title="Versions" hint="A version is never edited once saved; publishing points live traffic at one" right={canEdit && <Btn size="sm" onClick={openNewVersion}>New version</Btn>} />
+              <PanelHeader title="Versions" hint="A version is never edited once saved; publishing points live traffic at one" right={<span className="flex items-center gap-2">{versions.length > 0 && <Btn size="sm" onClick={openCompareVersions}>Compare scores</Btn>}{canEdit && <Btn size="sm" onClick={openNewVersion}>New version</Btn>}</span>} />
               <ul className="px-2 py-2">
                 {versions.map((v) => {
                   const isLive = v.version === selected.liveVersion;
@@ -361,6 +376,31 @@ export default function AgentStudio() {
             </div>
             <div><p className="text-xs text-zinc-500">Tone / hands off</p><p>{viewing.personaTone || "—"} / {viewing.personaHandoff || "—"}</p></div>
           </div>
+        </Modal>
+      )}
+
+      {modal === "compareVersions" && (
+        <Modal title="Compare versions" hint="Average score across every call evaluated under each version. A version with no evaluated calls yet is not shown." onClose={() => setModal(null)} footer={<Btn size="sm" onClick={() => setModal(null)}>Close</Btn>}>
+          {scoresLoading ? (
+            <p className="text-sm text-zinc-500">Loading…</p>
+          ) : scoresError ? (
+            <p className="text-sm text-red-600">Could not load scores: {scoresError}</p>
+          ) : scores.length === 0 ? (
+            <p className="text-sm text-zinc-500">No version has an evaluated call yet.</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead><tr className="text-left text-xs text-zinc-500"><th className="py-1">Version</th><th className="py-1 text-right">Average score</th><th className="py-1 text-right">Evaluated calls</th></tr></thead>
+              <tbody>
+                {scores.map((s) => (
+                  <tr key={s.version} className={cn("border-t border-zinc-100", s.version === selected?.liveVersion && "bg-[#FDF6F1]")}>
+                    <td className="flex items-center gap-2 py-2">{s.version}{s.version === selected?.liveVersion && <Pill tone="green">Live</Pill>}</td>
+                    <td className="py-2 text-right font-semibold">{s.averageScore.toFixed(1)}</td>
+                    <td className="py-2 text-right text-zinc-500">{s.evaluationCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </Modal>
       )}
     </>

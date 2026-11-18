@@ -512,6 +512,10 @@ export type Database = {
         Args: { target_agent_id: string; target_version: string }
         Returns: Database["public"]["Tables"]["agents"]["Row"]
       }
+      agent_version_score_summary: {
+        Args: { target_agent_id: string }
+        Returns: { version: string; average_score: number; evaluation_count: number }[]
+      }
     }
     Enums: {
       [_ in never]: never
