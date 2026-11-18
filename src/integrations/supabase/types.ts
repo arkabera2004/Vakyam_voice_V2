@@ -729,6 +729,27 @@ export type Database = {
         Update: { call_id?: string | null; created_at?: string; id?: string; notes?: string[]; org_id?: string; state?: "ringing" | "accepted" | "declined"; summary?: string[]; to_name?: string | null }
         Relationships: [{ foreignKeyName: "transfers_call_id_fkey"; columns: ["call_id"]; isOneToOne: false; referencedRelation: "calls"; referencedColumns: ["id"] }]
       }
+      // knowledge_sources, policy_gates and knowledge_versions are
+      // hand-added from supabase/migrations/20261116150000_domain_schema.sql;
+      // regenerate this file with `supabase gen types` once applied.
+      knowledge_sources: {
+        Row: { created_at: string; emoji: string; id: string; live: boolean; name: string; org_id: string; sub: string }
+        Insert: { created_at?: string; emoji?: string; id?: string; live?: boolean; name: string; org_id: string; sub?: string }
+        Update: { created_at?: string; emoji?: string; id?: string; live?: boolean; name?: string; org_id?: string; sub?: string }
+        Relationships: []
+      }
+      policy_gates: {
+        Row: { approver: string | null; enabled: boolean; id: string; name: string; org_id: string; sla: string | null; sub: string; triggered_7d: number }
+        Insert: { approver?: string | null; enabled?: boolean; id?: string; name: string; org_id: string; sla?: string | null; sub?: string; triggered_7d?: number }
+        Update: { approver?: string | null; enabled?: boolean; id?: string; name?: string; org_id?: string; sla?: string | null; sub?: string; triggered_7d?: number }
+        Relationships: []
+      }
+      knowledge_versions: {
+        Row: { created_at: string; id: string; label: string; org_id: string; published_by: string | null }
+        Insert: { created_at?: string; id?: string; label: string; org_id: string; published_by?: string | null }
+        Update: { created_at?: string; id?: string; label?: string; org_id?: string; published_by?: string | null }
+        Relationships: []
+      }
       // notifications is hand-added from
       // supabase/migrations/20261117100000_voice_platform.sql; regenerate
       // this file with `supabase gen types` once applied.
