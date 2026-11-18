@@ -180,14 +180,25 @@ Checked `Home.tsx` for a possible quick win and declined: its "Needs you" approv
 
 Baseline: **23 test files, 85 unit tests, tsc clean, eslint 0 warnings, build passes.** Two more pgTAP files written (`agent_version_score_summary`, `consent_policy_approval`), none executed — Docker remains deferred per explicit instruction throughout.
 
+### "Complete everything one by one": recording capture/upload, notifications, LiveCallDetail (commits `cd41f49` → `8b6ab13`)
+
+Three more items moved from the remaining-work list to real:
+
+- **Recording capture/upload** (was `NOT STARTED`): `useVoiceAgent.ts` mixes the mic stream and the remote/synthesized audio into a `MediaStreamAudioDestinationNode`, records it with `MediaRecorder`, and on call teardown uploads the blob to the `recordings` bucket and registers it via the new `create_recording()` RPC. The RPC fails safe on `calls.recording_allowed` and extends upload rights to the agent who started the call, the same ownership-or-editor exception already established elsewhere this session. The capture code is pure standard Web APIs (no Azure-specific behaviour), so it was reasoned through and built despite no live browser/Azure session being available to verify it end to end; that live-session verification remains the one open item.
+- **Notifications** (was `NOT IMPLEMENTED (UI)`): `assign_evaluation_reviewer()` inserts a notification only on a genuinely new assignment. `MobileSupervisor.tsx`'s old fictional alert feed (refund cards, a takeover button, a Freshdesk-retry card) is gone, replaced by a real list via the new `useNotifications()` hook; the sidebar bell now shows a real unread dot.
+- **`LiveCallDetail.tsx`** (was `DEMO`): real call/transcript data plus a Supabase Realtime subscription for live-streaming new segments and status changes. Caught, before shipping, that `calls` and `transcript_segments` had never been added to the `supabase_realtime` publication — added the missing migration. Whisper/barge-in/takeover and the fake tool trace were dropped: no server-side audio-mixing architecture exists for this single-party browser-call product, and the realtime agent has no tools wired (`GAP-B-02`, still open).
+
+Baseline: **24 test files, 95 unit tests, tsc clean, eslint 0 warnings, build passes.** Two more pgTAP files written (`recording_upload`, `notifications`), plus a publication-only migration with no pgTAP file (membership isn't meaningfully testable that way) — Docker remains deferred per explicit instruction.
+
 ## Exact next implementation task
 
 1. Once Docker (or Supabase CLI access) is available: `supabase db reset` + `supabase test db` to execute all pgTAP files for real; fix anything they reveal.
 2. Design (with the product owner) how explicit verbal consent is captured in a voice-only interface, then wire it.
-3. Recording upload: `MediaRecorder` on the browser's local/remote audio, private bucket upload, `recordings` metadata row, gated by `calls.recording_allowed`.
+3. `WarmTransfer.tsx`: `transfers` table exists but nothing creates a row yet; wire the read side with an honest empty state, same pattern as every other screen this session.
 4. `Analytics.tsx` remains demo data by explicit instruction: several widgets (language-mix donut, cost-per-model table) don't map onto the existing schema without inventing a pricing/rate table, which is a product decision, not plumbing.
 5. `Home.tsx`'s approval queue needs a real product decision (what approval types exist, what thresholds, who approves) before any schema or UI work makes sense.
-6. `LiveCallDetail.tsx`, `WarmTransfer.tsx`, `Routing.tsx`, `Knowledge.tsx`, and a Notifications UI remain demo or not implemented; see `docs/production-audit/PRODUCTION_GAP_REGISTER.md` for the per-screen reasoning.
+6. `Routing.tsx` (telephony-dependent, out of scope) and `Knowledge.tsx` (not consumed by the actual agent prompt pipeline) remain demo; see `docs/production-audit/PRODUCTION_GAP_REGISTER.md` for the per-screen reasoning.
+7. Caller-side (member's) transcript turns need Azure Realtime's `input_audio_transcription` requested in the session config — a live-Azure-only change not verifiable in this environment.
 
 ## External blockers (need the product owner)
 
