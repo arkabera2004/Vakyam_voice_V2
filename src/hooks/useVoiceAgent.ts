@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { SpeechOutput } from "@/lib/speechOutput";
-import { advanceCallSession, appendTranscriptSegment, createCallSession } from "@/lib/callSession";
+import { advanceCallSession, appendTranscriptSegment, createCallSession, createRecording } from "@/lib/callSession";
+import { pickRecorderMimeType, recordingObjectPath, stopRecorder } from "@/lib/callRecorder";
 import type { SessionState } from "@/domain/sessionState";
 
 export type VoiceStatus = "idle" | "connecting" | "connected" | "speaking" | "listening" | "error";
@@ -25,6 +26,11 @@ interface Call {
   /** Set when Meera speaks with a native Indian Azure voice. */
   speech?: SpeechOutput;
   context: AudioContext;
+  orgId: string;
+  /** Set only when calls.recording_allowed was true at call creation. */
+  recorder?: MediaRecorder;
+  recordingChunks?: Blob[];
+  recordingStartedAt?: number;
 }
 
 /**
@@ -115,6 +121,27 @@ export const useVoiceAgent = (): UseVoiceAgentReturn => {
     const call = callRef.current;
     callRef.current = null;
     if (!call) return;
+
+    // Started before the rest of cleanup, since stopRecorder() calls
+    // recorder.stop() synchronously and that must happen while the
+    // recording's audio graph (the context, the mic track) is still alive.
+    if (call.recorder && call.recordingChunks) {
+      const { recorder, recordingChunks, orgId, recordingStartedAt } = call;
+      void (async () => {
+        const blob = await stopRecorder(recorder, recordingChunks);
+        if (blob.size === 0) return;
+        const path = recordingObjectPath(orgId, id ?? "unknown", recorder.mimeType);
+        const { error: uploadError } = await supabase.storage.from("recordings").upload(path, blob, { contentType: blob.type || "audio/webm" });
+        if (uploadError) {
+          console.error("Could not upload the call recording:", uploadError.message);
+          return;
+        }
+        if (id) {
+          await createRecording(supabase, id, { objectPath: path, format: blob.type || "audio/webm", sizeBytes: blob.size, durationMs: recordingStartedAt ? Date.now() - recordingStartedAt : 0 });
+        }
+      })();
+    }
+
     window.clearTimeout(call.timeout);
     call.microphone.getTracks().forEach((track) => track.stop());
     call.peer.close();
@@ -162,6 +189,10 @@ export const useVoiceAgent = (): UseVoiceAgentReturn => {
     // Created during the click, so the browser lets it play sound later.
     const context = new AudioContext({ sampleRate: 24000 });
     let speech: SpeechOutput | undefined;
+    // start_call() already decided this, fail-safe; it is never re-derived
+    // or trusted from anywhere else in the browser.
+    const shouldRecord = created.call.recordingAllowed;
+    let recordingDestination: MediaStreamAudioDestinationNode | undefined;
 
     const fail = (cause: unknown) => {
       console.error("Voice call failed:", cause);
@@ -189,17 +220,36 @@ export const useVoiceAgent = (): UseVoiceAgentReturn => {
       ]);
       microphone = stream;
 
+      if (shouldRecord) {
+        try {
+          recordingDestination = context.createMediaStreamDestination();
+          context.createMediaStreamSource(stream).connect(recordingDestination);
+        } catch (cause) {
+          // Recording is an adjunct to the call, never a reason to fail it.
+          console.error("Could not set up call recording:", cause);
+          recordingDestination = undefined;
+        }
+      }
+
       const { data, error: tokenError } = session;
       if (tokenError || !data?.token || !data?.callUrl) {
         throw new Error(data?.error || (await functionErrorMessage(tokenError)) || "Failed to get a voice session");
       }
       if (data.speech) {
         const { SpeechOutput } = await import("@/lib/speechOutput");
-        speech = new SpeechOutput(data.speech, context, (speaking) => {
-          if (attempt !== attemptRef.current) return;
-          setIsSpeaking(speaking);
-          setStatus(speaking ? "speaking" : "listening");
-        });
+        // On this path the agent's audio is synthesised locally, not carried
+        // on the WebRTC remote track, so recordingDestination is given here
+        // directly rather than tapped from ontrack below.
+        speech = new SpeechOutput(
+          data.speech,
+          context,
+          (speaking) => {
+            if (attempt !== attemptRef.current) return;
+            setIsSpeaking(speaking);
+            setStatus(speaking ? "speaking" : "listening");
+          },
+          recordingDestination,
+        );
       }
       if (attempt !== attemptRef.current) {
         stream.getTracks().forEach((track) => track.stop());
@@ -212,6 +262,33 @@ export const useVoiceAgent = (): UseVoiceAgentReturn => {
       const connection = peer;
       const audio = new Audio();
       audio.autoplay = true;
+
+      // Only ever set up once recordingDestination carries both sides'
+      // audio: the mic (always, above) and, for the raw-audio path, the
+      // remote track once ontrack below fires. isTypeSupported is guarded
+      // the same defensive way as the mic tap -- a browser without
+      // MediaRecorder support must not break the call itself.
+      let recorder: MediaRecorder | undefined;
+      let recordingChunks: Blob[] | undefined;
+      let recordingStartedAt: number | undefined;
+      if (recordingDestination) {
+        try {
+          const mimeType = pickRecorderMimeType((type) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(type));
+          recorder = new MediaRecorder(recordingDestination.stream, mimeType ? { mimeType } : undefined);
+          recordingChunks = [];
+          const chunks = recordingChunks;
+          recorder.addEventListener("dataavailable", (event) => {
+            if (event.data.size > 0) chunks.push(event.data);
+          });
+          recorder.start();
+          recordingStartedAt = Date.now();
+        } catch (cause) {
+          console.error("Could not start the call recorder:", cause);
+          recorder = undefined;
+          recordingChunks = undefined;
+        }
+      }
+
       // Registered before negotiating, so ending the call at any point from
       // here on releases the microphone and the connection.
       callRef.current = {
@@ -221,9 +298,23 @@ export const useVoiceAgent = (): UseVoiceAgentReturn => {
         timeout: window.setTimeout(endCall, MAX_CALL_MS),
         speech,
         context,
+        orgId: created.call.orgId,
+        recorder,
+        recordingChunks,
+        recordingStartedAt,
       };
       connection.ontrack = (event) => {
         audio.srcObject = event.streams[0];
+        // The raw-audio path: the agent's voice arrives on this remote
+        // track, so it is tapped here rather than at SpeechOutput (which is
+        // never constructed on this path).
+        if (recordingDestination) {
+          try {
+            context.createMediaStreamSource(event.streams[0]).connect(recordingDestination);
+          } catch (cause) {
+            console.error("Could not tap the remote track for recording:", cause);
+          }
+        }
       };
       stream.getAudioTracks().forEach((track) => connection.addTrack(track, stream));
 
