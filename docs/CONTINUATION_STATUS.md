@@ -153,12 +153,24 @@ Baseline after this session: **22 test files, 78 unit tests, tsc clean, eslint 0
 
 Baseline: **22 test files, 78 unit tests, tsc clean, eslint 0/0, build passes.** This repository's QA Scorecards screen is now evaluation-workflow-complete at the code level: create → flag → assign → review, all against real tables, nothing left as demo data on that screen.
 
+### Agent Studio: backend and frontend integration (commits `96b2b0d` → `54ec617`)
+
+- **`agent_versions` is now database-enforced immutable.** The pre-existing `editors update agent_versions` RLS policy let anyone with edit rights change a row a historical call could permanently reference via `calls.agent_version_id`. Dropped that policy, added a `BEFORE UPDATE` trigger that refuses every update regardless of role. "Saving" a configuration change is always a new row; nothing ever edits an existing one.
+- **`publish_agent_version()`**: the one path that moves `agents.live_version` (a pointer, safe to update, unlike the versions themselves) to point at an existing version, validated and audited. The same function handles rollback.
+- **Fixed a real, previously-undiscovered defect**: the voice picker's labels (`aarti`/`marin`) had never actually reached a real call, because session 3's `resolveAgentConfig()` only recognised genuine Azure voice identifiers and silently dropped Studio's own cosmetic labels. Split the override into a Speech-path one and a realtime-path one, with the known labels mapped to what each path actually expects.
+- **Agent Studio rewired end to end**: listing, creation and editing against real `agents`; version history, drafting and publish/rollback against real `agent_versions`; permission-gated to the `agents.edit` tier, enforced by RLS underneath regardless of what the UI hides. Dropped the fictional cross-version QA-delta comparison table rather than fake one — a real version comes from this session's existing `calls.agent_version_id` → `evaluations.overall_score` link, which is real but not yet aggregated into that specific view.
+
+No product decision was needed for this phase: the draft/published model (a pointer, not a status flag), immutability, and the voice-label mapping were all resolvable from the existing architecture and schema.
+
+Baseline: **23 test files, 85 unit tests, tsc clean, eslint 0 warnings, build passes.** 4 new pgTAP assertions files/additions since the last report, none executed (Docker still deferred).
+
 ## Exact next implementation task
 
 1. Once Docker (or Supabase CLI access) is available: `supabase db reset` + `supabase test db` to execute all pgTAP files for real; fix anything they reveal.
 2. Design (with the product owner) how explicit verbal consent is captured in a voice-only interface, then wire it.
 3. Recording upload: `MediaRecorder` on the browser's local/remote audio, private bucket upload, `recordings` metadata row, gated by `calls.recording_allowed`.
-4. Wire the Agent Studio screen to read/write `agents`/`agent_versions` for real, closing the loop Phase 3 opened. Analytics.tsx remains demo data for the same reason QAScorecards.tsx originally was: several of its widgets (language-mix donut, cost-per-model table) don't map onto the existing schema without inventing a pricing/rate table, which is a product decision, not plumbing.
+4. Analytics.tsx remains demo data: several of its widgets (language-mix donut, cost-per-model table) don't map onto the existing schema without inventing a pricing/rate table, which is a product decision, not plumbing.
+5. A real cross-version QA comparison (average `evaluations.overall_score` grouped by `calls.agent_version_id`) would close the gap left by dropping Agent Studio's old fictional compare table — a genuine, buildable enhancement, not attempted this pass for time.
 
 ## External blockers (need the product owner)
 

@@ -124,3 +124,24 @@ Per the user's explicit instruction, Docker/local-pgTAP-execution recovery was d
 
 ### Summary
 Replaced QAScorecards.tsx's fictional per-prompt-version heatmap, fixed flagged-call list and hardcoded reviewer names with real data: criterion averages computed from `evaluation_scores`, actually-flagged `evaluations` (below their template's `pass_threshold`, now computed server-side), and a reviewer dropdown backed by the org's real `evaluations.review`-tier members. Deliberately did not build an "edit rubric weights" flow: `evaluation_criteria` is read by `submit_evaluation()`, so editing it in place would silently reinterpret every past score computed under the old weights; a real fix needs template versioning (a new `evaluation_templates` row, not an edit), which is future scope, not something to fake. Baseline: 22 test files, 78 unit tests, tsc clean, eslint 0/0, build passes.
+
+## 2026-11-18 — Agent Studio: backend and frontend integration
+
+| Date | Phase | SHA | Message | Changed | Tests | Result | Push |
+|---|---|---|---|---|---|---|---|
+| 2026-11-18 | 1 | `96b2b0d` | feat(db): agent_versions immutability trigger and publish_agent_version() | `20261118140000_agent_version_publishing.sql`, `agent_versions.test.sql` | SQL parse only; pgTAP NOT executed | 11 assertions written | `git ls-remote v2` = `96b2b0d` |
+| 2026-11-18 | 1 | `2d7992d` | fix(voice): make the agent's stored voice choice actually affect calls | `realtime-token/agentConfig.ts(.test)`, `realtime-token/index.ts` | `vitest run`, `deno check` | 81/81 | `git ls-remote v2` = `2d7992d` |
+| 2026-11-18 | 2-6 | `415115d` | feat(console): wire Agent Studio to real agents and agent_versions | `types.ts`, `AgentStudio.tsx` | tsc, eslint, `vitest run`, `npm run build` | 81/81 | `git ls-remote v2` = `415115d` |
+| 2026-11-18 | 6 | `54ec617` | test(voice): unit test nextVersion, extracted to keep Fast Refresh clean | `src/lib/agentVersion.ts(.test)`, `AgentStudio.tsx` | tsc, eslint, `vitest run`, `npm run build` | 85/85 | `git ls-remote v2` = `54ec617` |
+
+### Architectural decisions made, and why
+- **No `status` column added to `agents` or `agent_versions`.** The existing design already distinguishes draft from published purely by whether a version's string matches `agents.live_version` — a pointer, not a flag. Adding a redundant status field would be an unnecessary schema change the master prompt explicitly asked to avoid, and the pointer model already satisfies "draft versions, published versions, version history" without it.
+- **`agent_versions` is now database-enforced immutable.** The pre-existing `editors update agent_versions` RLS policy let anyone with edit rights change a row that a historical call may permanently reference via `calls.agent_version_id` — silently reinterpreting what that call actually used. Dropped that policy, added a `BEFORE UPDATE` trigger that refuses every update. "Save" in the UI is always an insert; "publish" only ever moves the `agents.live_version` pointer, which is safe to update since it is not itself a snapshot.
+- **Fixed a latent, previously-undiscovered defect**: Agent Studio's voice picker (`aarti`/`marin`) had never actually affected a real call, because `resolveAgentConfig()` (added in session 3) only recognised genuine Azure voice identifiers and silently discarded the Studio's own cosmetic labels. Split the single voice override into a Speech-path one and a realtime-path one, and mapped the known labels to what each path actually expects.
+- **Dropped the fictional cross-version QA comparison table** (the old "compare v7 with v6" modal showed invented numbers). Nothing in the current schema computes a real version-to-version score comparison without further design (it would need to join `calls.agent_version_id` to `evaluations.overall_score` and aggregate per version) — left as a documented future enhancement rather than faked.
+
+### Verified
+23 test files, 85 unit tests, TypeScript clean, ESLint 0 warnings, production build passes, Deno check clean on the touched Edge Function. **Not verified**: none of the new pgTAP assertions (agent_versions immutability, publish_agent_version permission boundaries) have executed against a real database — Docker remains deferred per explicit instruction. Nothing is deployed.
+
+### Product decision still needed
+None for this phase — the draft/published model, immutability, and voice-label mapping were all resolvable from the existing architecture without new input.
