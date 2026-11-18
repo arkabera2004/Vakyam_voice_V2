@@ -717,6 +717,15 @@ export type Database = {
         Update: { bucket?: string; call_id?: string; duration_ms?: number | null; format?: string; id?: string; object_path?: string; org_id?: string; status?: "pending" | "uploaded" | "verified" | "failed" | "deleted" }
         Relationships: [{ foreignKeyName: "recordings_call_id_fkey"; columns: ["call_id"]; isOneToOne: true; referencedRelation: "calls"; referencedColumns: ["id"] }]
       }
+      // notifications is hand-added from
+      // supabase/migrations/20261117100000_voice_platform.sql; regenerate
+      // this file with `supabase gen types` once applied.
+      notifications: {
+        Row: { body: string; created_at: string; id: string; kind: string; org_id: string; read_at: string | null; title: string; user_id: string }
+        Insert: { body?: string; created_at?: string; id?: string; kind: string; org_id: string; read_at?: string | null; title: string; user_id: string }
+        Update: { body?: string; created_at?: string; id?: string; kind?: string; org_id?: string; read_at?: string | null; title?: string; user_id?: string }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

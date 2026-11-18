@@ -9,6 +9,7 @@ import { WayamMark } from "@/components/brand/WayamMark";
 import { cn } from "@/lib/utils";
 import { NAV } from "./nav";
 import { ROLE_LABEL } from "@/domain/roles";
+import { useNotifications } from "@/hooks/useNotifications";
 import { Btn } from "./ui";
 
 const CRUMBS: Record<string, string> = {
@@ -102,6 +103,7 @@ export function ConsoleShell() {
   const pathname = useLocation().pathname.replace(/\/+$/, "") || "/";
   const { signOut } = useAuth();
   const { state, me, reset } = useConsole();
+  const { unreadCount } = useNotifications();
   const roleLine = me.role ? `${ROLE_LABEL[me.role]} · ${me.orgName ?? "organisation"}` : "No organisation yet";
   const liveId = Number(pathname.split("/console/live/")[1]);
   const liveCall = LIVE_CALLS.find((c) => c.id === liveId);
@@ -193,8 +195,9 @@ export function ConsoleShell() {
           <p className="truncate text-[13px] text-zinc-600">{crumb}</p>
           <div className="flex items-center gap-2">
             <span className="hidden rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] text-zinc-600 sm:inline">Meera v7 · Club Mahindra desk</span>
-            <Link to="/console/alerts" className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100" aria-label="Alerts">
+            <Link to="/console/alerts" className="relative rounded-md p-2 text-zinc-500 hover:bg-zinc-100" aria-label={unreadCount > 0 ? `Alerts, ${unreadCount} unread` : "Alerts"}>
               <Bell className="h-4 w-4" />
+              {unreadCount > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#E2703A]" />}
             </Link>
             <Link to="/voice" className="hidden sm:block">
               <Btn variant="ghost" size="sm">
