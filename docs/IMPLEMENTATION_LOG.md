@@ -154,3 +154,22 @@ None for this phase — the draft/published model, immutability, and voice-label
 | 2026-11-18 | — | `1624be0` | feat(console): real cross-version QA comparison in Agent Studio | `types.ts`, `AgentStudio.tsx` | tsc, eslint, `vitest run`, `npm run build` | 85/85 | `git ls-remote v2` = `1624be0` |
 
 Replaces the fictional "compare v7 with v6" table Agent Studio's rewrite had intentionally dropped (see above) with a real one: `agent_version_score_summary()` averages `evaluations.overall_score` grouped by `calls.agent_version_id`, excluding a call with no evaluation yet and an evaluation whose `overall_score` is still NULL (in progress) rather than counting either as a zero. Read-only to any org member, since it exposes nothing not already visible by reading the underlying tables directly. "Compare scores" in the Versions panel renders it as a plain table, live version highlighted the same way the versions list already does. No product decision was needed; no new schema either, since `calls.agent_version_id` and `evaluations.overall_score` already existed from earlier session work — this was purely an aggregation query that plain PostgREST cannot express.
+
+## 2026-11-18 — Complete-project master prompt: Tools/CRM, Compliance, Live calls, Call review
+
+| Date | Phase | SHA | Message | Changed | Tests | Result | Push |
+|---|---|---|---|---|---|---|---|
+| 2026-11-18 | 8 | `6c2b51b` | feat(console): wire Tools to real CRM integrations, drop fake vendor rows | `Tools.tsx`, `types.ts` | tsc, eslint, `vitest run`, `npm run build` | 85/85 | `git ls-remote v2` = `6c2b51b` |
+| 2026-11-18 | 2 | `d2bde68` | feat(db): consent policy approval workflow with content immutability | `20261118160000_consent_policy_approval.sql`, `consent_policy_approval.test.sql` | SQL parse only; pgTAP NOT executed | 11 assertions written | `git ls-remote v2` = `d2bde68` |
+| 2026-11-18 | 2/6 | `7d4e52a` | feat(console): wire Compliance to real consent, retention, PII and audit data | `Compliance.tsx`, `types.ts` | tsc, eslint, `vitest run`, `npm run build` | 85/85 | `git ls-remote v2` = `7d4e52a` |
+| 2026-11-18 | 4 | `c7bc6d3` | feat(console): wire Live calls and Call review to real call data | `LiveCalls.tsx`, `CallReview.tsx`, `types.ts` | tsc, eslint, `vitest run`, `npm run build` | 85/85 | `git ls-remote v2` = `c7bc6d3` |
+
+### What this closed
+- **Tools**: six invented CRM vendors and a fabricated telephony panel replaced with the real `crm_integrations`/`crm_sync_jobs` tables and the already-built `crm-test-connection`/`enqueue_crm_sync` functions. "Run connection tests" used to literally say "(simulated)... no real adapter was contacted" in its own toast.
+- **Compliance**: the single most fictional screen in the product — a static disclosure line, an invented 14-day/"17,806 calls" consent chart, a retention KV contradicting the real 365-day policy already in the database, PII toggles that reset on refresh, a fictional TRAI DLT panel, and a client-side-only audit log — rewired end to end to `consent_policies` (with a new `approve_consent_policy()` and the same content-immutability pattern as `agent_versions`), `retention_policies`, `pii_settings`, `deletion_requests` and the real `audit_log`.
+- **Live calls / Call review**: GAP-F-03, open since the very first audit of this codebase, is finally closed — Call review now actually reads its `?call=` parameter instead of always showing the same hardcoded call. Both screens show real data with honest empty states; the waveform animation, callback-task system and CSAT badge were dropped rather than faked, since nothing backs them.
+
+### Deliberately not attempted this pass, and why
+`Home.tsx`'s "Needs you" decision queue (refund/upgrade approvals) has no backing table at all — building it would mean designing a new approval-workflow schema, not wiring existing data, and was out of scope for "connect to real backend" work. `LiveCallDetail.tsx` (needs a realtime subscription design), `WarmTransfer.tsx` and `Routing.tsx` (nothing creates the rows they would read), `Knowledge.tsx` (not consumed by the actual prompt pipeline), `Analytics.tsx` (explicitly deferred per instruction), and a Notifications UI (table exists, nothing creates/reads notifications yet) all remain demo or not implemented. Full list in `docs/production-audit/PRODUCTION_GAP_REGISTER.md`.
+
+Baseline throughout: 23 test files, 85 unit tests, tsc clean, eslint 0 warnings, build passes. No pgTAP executed (Docker deferred per explicit instruction).

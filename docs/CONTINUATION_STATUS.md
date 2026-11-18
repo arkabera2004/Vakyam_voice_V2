@@ -168,12 +168,26 @@ Baseline: **23 test files, 85 unit tests, tsc clean, eslint 0 warnings, build pa
 
 Closed the gap the Agent Studio rewrite left open: `agent_version_score_summary()` averages `evaluations.overall_score` grouped by `calls.agent_version_id` for one agent, server-side (plain PostgREST cannot express a GROUP BY), excluding a call with no evaluation and an evaluation still mid-flight (`overall_score IS NULL`) rather than treating either as a zero. "Compare scores" in Agent Studio's Versions panel renders it as a plain table. Read-only to any org member. No new schema, no product decision — both columns it joins already existed from earlier work; this was purely the aggregation query itself. 8 new pgTAP assertions, not executed (Docker still deferred).
 
+### Complete-project master prompt: Tools/CRM, Compliance, Live calls, Call review (commits `6c2b51b` → `c7bc6d3`)
+
+Four more screens moved from demo to real data in this pass:
+
+- **Tools**: real `crm_integrations`/`crm_sync_jobs`, driving the already-built `crm-test-connection` and `enqueue_crm_sync`. Dropped six invented vendor rows and a fabricated telephony panel entirely.
+- **Compliance**: the most fictional screen in the product, rewired end to end. New `approve_consent_policy()` with the same content-immutability guarantee already given to `agent_versions` (a policy's wording freezes once ever approved, since calls reference it permanently). Retention, PII settings, deletion requests and the audit log are all real now; the invented consent-rate chart and TRAI DLT panel are gone, not faked.
+- **Live calls / Call review**: GAP-F-03 — open since this project's very first audit — is finally closed. Call review reads its `?call=` parameter and shows a real transcript, evaluation and (via signed Storage URL) recording when one exists.
+
+Checked `Home.tsx` for a possible quick win and declined: its "Needs you" approval queue (refund/upgrade decisions) has no backing table anywhere in the schema. Wiring it would mean designing a new approval-workflow data model, which is scope the instruction to "connect to real backend data" does not cover — that is new feature design, not integration.
+
+Baseline: **23 test files, 85 unit tests, tsc clean, eslint 0 warnings, build passes.** Two more pgTAP files written (`agent_version_score_summary`, `consent_policy_approval`), none executed — Docker remains deferred per explicit instruction throughout.
+
 ## Exact next implementation task
 
 1. Once Docker (or Supabase CLI access) is available: `supabase db reset` + `supabase test db` to execute all pgTAP files for real; fix anything they reveal.
 2. Design (with the product owner) how explicit verbal consent is captured in a voice-only interface, then wire it.
 3. Recording upload: `MediaRecorder` on the browser's local/remote audio, private bucket upload, `recordings` metadata row, gated by `calls.recording_allowed`.
-4. Analytics.tsx remains demo data: several of its widgets (language-mix donut, cost-per-model table) don't map onto the existing schema without inventing a pricing/rate table, which is a product decision, not plumbing.
+4. `Analytics.tsx` remains demo data by explicit instruction: several widgets (language-mix donut, cost-per-model table) don't map onto the existing schema without inventing a pricing/rate table, which is a product decision, not plumbing.
+5. `Home.tsx`'s approval queue needs a real product decision (what approval types exist, what thresholds, who approves) before any schema or UI work makes sense.
+6. `LiveCallDetail.tsx`, `WarmTransfer.tsx`, `Routing.tsx`, `Knowledge.tsx`, and a Notifications UI remain demo or not implemented; see `docs/production-audit/PRODUCTION_GAP_REGISTER.md` for the per-screen reasoning.
 
 ## External blockers (need the product owner)
 
